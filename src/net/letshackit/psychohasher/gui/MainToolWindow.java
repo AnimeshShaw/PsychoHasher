@@ -18,8 +18,6 @@ package net.letshackit.psychohasher.gui;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.HeadlessException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -27,12 +25,12 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 /**
  *
- * @author psychocoder
+ * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
 public class MainToolWindow extends JFrame {
 
-    private final int DEF_WIDTH = 800;
-    private final int DEF_HEIGHT = 600;
+    private final int DEF_WIDTH = 600;
+    private final int DEF_HEIGHT = 400;
 
     public MainToolWindow() throws HeadlessException {
         setSize(new Dimension(DEF_WIDTH, DEF_HEIGHT));

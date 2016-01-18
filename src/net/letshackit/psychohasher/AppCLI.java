@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package net.letshackit.psychohasher;
 
 /**
  *
- * @author psychocoder
+ * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
 public class AppCLI {
-    
+
 }
