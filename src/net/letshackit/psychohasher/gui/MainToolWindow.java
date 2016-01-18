@@ -29,8 +29,8 @@ import javax.swing.UnsupportedLookAndFeelException;
  */
 public class MainToolWindow extends JFrame {
 
-    private final int DEF_WIDTH = 600;
-    private final int DEF_HEIGHT = 400;
+    private final int DEF_WIDTH = 800;
+    private final int DEF_HEIGHT = 600;
 
     public MainToolWindow() throws HeadlessException {
         setSize(new Dimension(DEF_WIDTH, DEF_HEIGHT));

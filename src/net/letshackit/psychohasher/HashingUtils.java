@@ -7,12 +7,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- *
+ * Core class containing Hashing Utility functions.
+ * 
  * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
 public class HashingUtils {
@@ -90,6 +90,16 @@ public class HashingUtils {
         }
 
         return byteArrayToHex(mdbytes);
+    } 
+    
+    /**
+     * 
+     * @param path
+     * @param hashAlgo
+     * @return 
+     */
+    private String getFileHash(Path path, Hash hashAlgo) {
+        return getFileHash(path, hashAlgo.getValue());
     }
 
     /**
@@ -113,14 +123,14 @@ public class HashingUtils {
      * @param hashAlgo Hashing algorithm to be used.
      * @return Hex encoded hash of the file
      */
-    private String getFileHash(String file, String hashAlgo) {
-        return getFileHash(Paths.get(file), hashAlgo);
+    private String getFileHash(File file, Hash hashAlgo) {
+        return getFileHash(file.toPath(), hashAlgo.getValue());
     }
-
+    
     public static void main(String[] args) {
         HashingUtils hUtils = new HashingUtils();
         String path = "/home/psychocoder/AndroidBugs.pdf";
-        System.out.println(hUtils.getFileHash(path, Hash.SHA256.getValue()));
-        System.out.println(hUtils.getHash("Hello World!", "SHA-512"));
+        System.out.println(hUtils.getFileHash(new File(path), Hash.SHA256.getValue()));
+        System.out.println(hUtils.getHash("Hello World!", "SHA-512"));        
     }
 }

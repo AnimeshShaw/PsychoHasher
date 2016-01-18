@@ -16,8 +16,9 @@
 package net.letshackit.psychohasher;
 
 /**
- *
- * @author psychocoder
+ * Enum that contains all the Hash Algo types supported by this application.
+ * 
+ * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
 public enum Hash {
 
@@ -28,7 +29,7 @@ public enum Hash {
     SHA384("SHA-384"),
     SHA512("SHA-512");
 
-    private String value;
+    private final String value;
 
     private Hash(String value) {
         this.value = value;

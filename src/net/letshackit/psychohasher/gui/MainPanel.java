@@ -30,8 +30,8 @@ import javax.swing.SwingConstants;
  */
 class MainPanel extends JPanel {
 
-    private final int DEF_WIDTH = 600;
-    private final int DEF_HEIGHT = 400;
+    private final int DEF_WIDTH = 800;
+    private final int DEF_HEIGHT = 600;
 
     private JMenuBar menuBar;
     private JMenu file, hashUtils, help;

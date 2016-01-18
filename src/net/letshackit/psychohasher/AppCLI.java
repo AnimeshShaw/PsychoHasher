@@ -20,5 +20,9 @@ package net.letshackit.psychohasher;
  * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
 public class AppCLI {
+    
+    public static void main(String[] args) {
+        
+    }
 
 }
