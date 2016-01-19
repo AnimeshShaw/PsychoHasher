@@ -16,11 +16,11 @@
 package net.letshackit.psychohasher;
 
 /**
- * Enum that contains all the Hash Algo types supported by this application.
+ * Enum that contains all the HashType Algo types supported by this application.
  * 
  * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
-public enum Hash {
+public enum HashType {
 
     MD5("MD5"),
     SHA1("SHA1"),
@@ -31,7 +31,7 @@ public enum Hash {
 
     private final String value;
 
-    private Hash(String value) {
+    private HashType(String value) {
         this.value = value;
     }
 
