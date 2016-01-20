@@ -20,18 +20,26 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.IOException;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import net.letshackit.psychohasher.HashType;
 
 /**
  *
@@ -40,7 +48,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class PsychoHasherGui extends JFrame {
 
     private final int DEF_WIDTH = 800;
-    private final int DEF_HEIGHT = 500;
+    private final int DEF_HEIGHT = 400;
 
     private JMenuBar menuBar;
     private JMenu file, hashUtils, help;
@@ -52,17 +60,34 @@ public class PsychoHasherGui extends JFrame {
 
     private JTabbedPane tabbedPane;
 
-    private JPanel mainpanel, welcome, hashText, hashFiles, hashDisks, verifyHashes;
+    private JEditorPane welcomePane;
+
+    private final JPanel mainPanel, resultPanel;
+    private JPanel welcome, hashText, hashFiles, hashDisks, verifyHashes;
+
+    /* Field declaration for ResultPanel */
+    private JComboBox<String> hashAlgosCombo;
+    private JTextArea resultTxtArea;
+    private JButton copyToClipboard, computeHash;
+    private JScrollPane scrollPaneResult;
+
+    /* Field declaration for HashText tab */
+    private JLabel hashTxtPaste;
+    private JScrollPane hashTxtPaneData;
+    private JButton hashTxtPasteButton;
+    private JTextArea hashTxtAreaData;
 
     public PsychoHasherGui() throws HeadlessException {
-        mainpanel = new JPanel(new BorderLayout());
+        mainPanel = new JPanel(new BorderLayout());
+        resultPanel = new JPanel();
+
         setSize(new Dimension(DEF_WIDTH, DEF_HEIGHT));
         setResizable(false);
         setAlwaysOnTop(true);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setTitle("PsychoHasher - All Purpose Hashing tool");
-        setContentPane(mainpanel);
+        setContentPane(mainPanel);
         setLayout(new BorderLayout());
         initComponents();
     }
@@ -75,8 +100,38 @@ public class PsychoHasherGui extends JFrame {
             System.err.println("Unable to set system look and feel.");
         }
 
+        createResultPanel();
         createTopMenu();
         createMainTabbedPane();
+    }
+
+    private void createResultPanel() {
+        //resultPanel.setSize(getWidth(), 150);
+        resultPanel.setBorder(BorderFactory.createTitledBorder("Select Type of "
+                + "Hash and Click 'Compute Hash'"));
+        resultPanel.setLayout(null);
+        resultPanel.setBounds(20, 180, getWidth() - 50, 140);
+        
+        hashAlgosCombo = new JComboBox<>(HashType.getSupportedHashes());
+        hashAlgosCombo.setEditable(false);
+        hashAlgosCombo.setLightWeightPopupEnabled(true);
+        hashAlgosCombo.setBounds(30, 90, 200, 40);
+        resultPanel.add(hashAlgosCombo);
+             
+        copyToClipboard = new JButton("Copy to Clipboard");
+        copyToClipboard.setBounds(250, 90, 200, 40);
+        resultPanel.add(copyToClipboard);
+        
+        computeHash = new JButton("Compute Hash!");
+        computeHash.setBounds(470, 90, 200, 40);
+        resultPanel.add(computeHash);
+        
+        resultTxtArea = new JTextArea();       
+        scrollPaneResult = new JScrollPane(resultTxtArea,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPaneResult.setBounds(30, 30, 570, 50);        
+        resultPanel.add(scrollPaneResult);
     }
 
     private void createTopMenu() {
@@ -146,26 +201,60 @@ public class PsychoHasherGui extends JFrame {
         });
         hashUtils.add(verifyHash);
 
-        mainpanel.add(menuBar, BorderLayout.NORTH);
+        mainPanel.add(menuBar, BorderLayout.NORTH);
     }
 
     private void createMainTabbedPane() {
-        tabbedPane = new JTabbedPane();
-        //tabbedPane.setSize(getWidth(), getHeight());
 
+        /**
+         * Initialize the panels to be used in the tabbed pane.
+         */
         welcome = new JPanel(new FlowLayout());
         hashText = new JPanel();
         hashFiles = new JPanel();
         hashDisks = new JPanel();
         verifyHashes = new JPanel();
 
+        /**
+         * Initialize tabbed pane and create tabs
+         */
+        tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Welcome", welcome);
         tabbedPane.addTab("Hash Text", hashText);
         tabbedPane.addTab("Hash Files", hashFiles);
         tabbedPane.addTab("Hash Disks", hashDisks);
         tabbedPane.addTab("Verify Hashes", verifyHashes);
 
-        mainpanel.add(tabbedPane, BorderLayout.CENTER);
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
+
+        /* ---Welcome Tab Starts--- */
+        welcomePane = new JEditorPane();
+        welcomePane.setEditable(false);
+        try {
+            welcomePane.setPage(this.getClass().
+                    getResource("resources/welcome.html"));
+        } catch (IOException ex) {
+            System.err.println(ex.getMessage());
+        }
+        welcome.add(welcomePane);
+        /* ---Welcome Tab ends--- */
+
+        /* ---HashText tab Starts--- */
+        hashText.setLayout(null);
+        hashTxtPasteButton = new JButton("Paste Text");
+        hashTxtPasteButton.setBounds(20, 20, 150, 30);
+        hashText.add(hashTxtPasteButton);
+
+        hashTxtAreaData = new JTextArea();
+        hashTxtPaneData = new JScrollPane(hashTxtAreaData,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        hashTxtPaneData.setBounds(190, 20, 575, 140);
+        hashText.add(hashTxtPaneData);
+        
+        hashText.add(resultPanel);
+
+        /* ---HashText tab ends--- */
     }
 
     public static void main(String[] args) {

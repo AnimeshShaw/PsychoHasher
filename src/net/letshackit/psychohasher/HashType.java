@@ -38,5 +38,9 @@ public enum HashType {
     public String getValue() {
         return value;
     }
-
+    
+    public static String[] getSupportedHashes() {
+        return new String[] {"MD5", "SHA1", "SHA224", "SHA384", "SHA512"};
+    }
+    
 }
