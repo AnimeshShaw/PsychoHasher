@@ -40,7 +40,7 @@ public enum HashType {
     }
     
     public static String[] getSupportedHashes() {
-        return new String[] {"MD5", "SHA1", "SHA224", "SHA384", "SHA512"};
+        return new String[] {"MD5", "SHA1", "SHA-224", "SHA-256", "SHA-384", "SHA-512"};
     }
     
 }
