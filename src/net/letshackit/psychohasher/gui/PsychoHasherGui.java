@@ -18,8 +18,16 @@ package net.letshackit.psychohasher.gui;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -40,6 +48,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import net.letshackit.psychohasher.HashType;
+import net.letshackit.psychohasher.HashingUtils;
 
 /**
  *
@@ -48,7 +57,7 @@ import net.letshackit.psychohasher.HashType;
 public class PsychoHasherGui extends JFrame {
 
     private final int DEF_WIDTH = 800;
-    private final int DEF_HEIGHT = 400;
+    private final int DEF_HEIGHT = 450;
 
     private JMenuBar menuBar;
     private JMenu file, hashUtils, help;
@@ -65,14 +74,16 @@ public class PsychoHasherGui extends JFrame {
     private final JPanel mainPanel, resultPanel;
     private JPanel welcome, hashText, hashFiles, hashDisks, verifyHashes;
 
+    private Clipboard clipBrd;
+
     /* Field declaration for ResultPanel */
-    private JComboBox<String> hashAlgosCombo;
+    private JComboBox<HashType> hashAlgosCombo;
     private JTextArea resultTxtArea;
     private JButton copyToClipboard, computeHash;
     private JScrollPane scrollPaneResult;
 
     /* Field declaration for HashText tab */
-    private JLabel hashTxtPaste;
+    private JLabel hashTxtHeader;
     private JScrollPane hashTxtPaneData;
     private JButton hashTxtPasteButton;
     private JTextArea hashTxtAreaData;
@@ -100,37 +111,53 @@ public class PsychoHasherGui extends JFrame {
             System.err.println("Unable to set system look and feel.");
         }
 
+        clipBrd = Toolkit.getDefaultToolkit().getSystemClipboard();
+
         createResultPanel();
         createTopMenu();
         createMainTabbedPane();
     }
 
     private void createResultPanel() {
-        //resultPanel.setSize(getWidth(), 150);
         resultPanel.setBorder(BorderFactory.createTitledBorder("Select Type of "
                 + "Hash and Click 'Compute Hash'"));
         resultPanel.setLayout(null);
-        resultPanel.setBounds(20, 180, getWidth() - 50, 140);
-        
-        hashAlgosCombo = new JComboBox<>(HashType.getSupportedHashes());
+        resultPanel.setBounds(20, 180, getWidth() - 50, 130);
+
+        hashAlgosCombo = new JComboBox<>(HashType.values());
         hashAlgosCombo.setEditable(false);
         hashAlgosCombo.setLightWeightPopupEnabled(true);
-        hashAlgosCombo.setBounds(30, 90, 200, 40);
+        hashAlgosCombo.setBounds(30, 75, 200, 40);
         resultPanel.add(hashAlgosCombo);
-             
+
         copyToClipboard = new JButton("Copy to Clipboard");
-        copyToClipboard.setBounds(250, 90, 200, 40);
+        copyToClipboard.setBounds(250, 75, 200, 40);
+        copyToClipboard.addActionListener((ActionEvent e) -> {
+            if (!resultTxtArea.getText().isEmpty()) {
+                StringSelection strSelec = new StringSelection(resultTxtArea.
+                        getText());
+                clipBrd.setContents(strSelec, null);
+            }
+        });
         resultPanel.add(copyToClipboard);
-        
+
         computeHash = new JButton("Compute Hash!");
-        computeHash.setBounds(470, 90, 200, 40);
+        computeHash.setBounds(470, 75, 200, 40);
+        computeHash.addActionListener((ActionEvent e) -> {
+            assert !hashTxtAreaData.getText().isEmpty();
+            String hashedData = HashingUtils.getHash(hashTxtAreaData.getText(),
+                    (HashType) hashAlgosCombo.getSelectedItem());
+            resultTxtArea.setText(hashedData);
+        });
         resultPanel.add(computeHash);
-        
-        resultTxtArea = new JTextArea();       
+
+        resultTxtArea = new JTextArea();
+        resultTxtArea.setEditable(false);
+        resultTxtArea.setWrapStyleWord(false);
         scrollPaneResult = new JScrollPane(resultTxtArea,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPaneResult.setBounds(30, 30, 570, 50);        
+        scrollPaneResult.setBounds(30, 25, 640, 40);
         resultPanel.add(scrollPaneResult);
     }
 
@@ -241,17 +268,39 @@ public class PsychoHasherGui extends JFrame {
 
         /* ---HashText tab Starts--- */
         hashText.setLayout(null);
+
+        hashTxtHeader = new JLabel("Get Hash for Text/String!");
+        hashTxtHeader.setBounds(10, 10, 200, 30);
+        hashTxtHeader.setFont(new Font("Cambria", Font.BOLD, 14));
+        hashText.add(hashTxtHeader);
+
         hashTxtPasteButton = new JButton("Paste Text");
-        hashTxtPasteButton.setBounds(20, 20, 150, 30);
+        hashTxtPasteButton.
+                setToolTipText("Pastes text into the text area from System Clipboard");
+        hashTxtPasteButton.setBounds(20, 50, 150, 30);
+        hashTxtPasteButton.addActionListener((ActionEvent e) -> {
+            Transferable t = clipBrd.getContents(PsychoHasherGui.this);
+
+            if (t != null) {
+                try {
+                    hashTxtAreaData.setText((String) t.
+                            getTransferData(DataFlavor.stringFlavor));
+                } catch (UnsupportedFlavorException | IOException ex) {
+                    System.err.
+                            println("Error while pasting data from clipboard.");
+                }
+            }
+
+        });
         hashText.add(hashTxtPasteButton);
 
         hashTxtAreaData = new JTextArea();
         hashTxtPaneData = new JScrollPane(hashTxtAreaData,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        hashTxtPaneData.setBounds(190, 20, 575, 140);
+        hashTxtPaneData.setBounds(190, 50, 575, 120);
         hashText.add(hashTxtPaneData);
-        
+
         hashText.add(resultPanel);
 
         /* ---HashText tab ends--- */
