@@ -17,7 +17,7 @@ package net.letshackit.psychohasher;
 
 /**
  * Enum that contains all the HashType Algo types supported by this application.
- * 
+ *
  * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
 public enum HashType {
@@ -38,9 +38,9 @@ public enum HashType {
     public String getValue() {
         return value;
     }
-    
+
     public static String[] getSupportedHashes() {
-        return new String[] {"MD5", "SHA1", "SHA-224", "SHA-256", "SHA-384", "SHA-512"};
+        return new String[]{"MD5", "SHA1", "SHA-224", "SHA-256", "SHA-384", "SHA-512"};
     }
-    
+
 }
