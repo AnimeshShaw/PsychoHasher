@@ -27,7 +27,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -42,11 +41,16 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.BevelBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.table.DefaultTableModel;
 import net.letshackit.psychohasher.HashType;
 import net.letshackit.psychohasher.HashingUtils;
 
@@ -57,7 +61,7 @@ import net.letshackit.psychohasher.HashingUtils;
 public class PsychoHasherGui extends JFrame {
 
     private final int DEF_WIDTH = 800;
-    private final int DEF_HEIGHT = 450;
+    private final int DEF_HEIGHT = 500;
 
     private JMenuBar menuBar;
     private JMenu file, hashUtils, help;
@@ -74,6 +78,8 @@ public class PsychoHasherGui extends JFrame {
     private final JPanel mainPanel, resultPanel;
     private JPanel welcome, hashText, hashFiles, hashDisks, verifyHashes;
 
+    private JToolBar statusBar;
+
     private Clipboard clipBrd;
 
     /* Field declaration for ResultPanel */
@@ -87,6 +93,13 @@ public class PsychoHasherGui extends JFrame {
     private JScrollPane hashTxtPaneData;
     private JButton hashTxtPasteButton;
     private JTextArea hashTxtAreaData;
+
+    /* Field Description for HashFiles tab */
+    private JLabel hashFilesHeader;
+    private JScrollPane filesTablePane;
+    private JTable filesTable;
+    private DefaultTableModel tableModel;
+    private JButton addFile, addFiles, addFolder, removeSelected;
 
     public PsychoHasherGui() throws HeadlessException {
         mainPanel = new JPanel(new BorderLayout());
@@ -116,22 +129,32 @@ public class PsychoHasherGui extends JFrame {
         createResultPanel();
         createTopMenu();
         createMainTabbedPane();
+        createStatusBar();
     }
 
     private void createResultPanel() {
         resultPanel.setBorder(BorderFactory.createTitledBorder("Select Type of "
                 + "Hash and Click 'Compute Hash'"));
         resultPanel.setLayout(null);
-        resultPanel.setBounds(20, 180, getWidth() - 50, 130);
+        resultPanel.setBounds(20, 240, getWidth() - 50, 145);
+
+        resultTxtArea = new JTextArea();
+        resultTxtArea.setEditable(false);
+        resultTxtArea.setWrapStyleWord(false);
+        scrollPaneResult = new JScrollPane(resultTxtArea,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPaneResult.setBounds(30, 30, 680, 50);
+        resultPanel.add(scrollPaneResult);
 
         hashAlgosCombo = new JComboBox<>(HashType.values());
         hashAlgosCombo.setEditable(false);
         hashAlgosCombo.setLightWeightPopupEnabled(true);
-        hashAlgosCombo.setBounds(30, 75, 200, 40);
+        hashAlgosCombo.setBounds(50, 90, 200, 40);
         resultPanel.add(hashAlgosCombo);
 
         copyToClipboard = new JButton("Copy to Clipboard");
-        copyToClipboard.setBounds(250, 75, 200, 40);
+        copyToClipboard.setBounds(270, 90, 200, 40);
         copyToClipboard.addActionListener((ActionEvent e) -> {
             if (!resultTxtArea.getText().isEmpty()) {
                 StringSelection strSelec = new StringSelection(resultTxtArea.
@@ -142,7 +165,7 @@ public class PsychoHasherGui extends JFrame {
         resultPanel.add(copyToClipboard);
 
         computeHash = new JButton("Compute Hash!");
-        computeHash.setBounds(470, 75, 200, 40);
+        computeHash.setBounds(490, 90, 200, 40);
         computeHash.addActionListener((ActionEvent e) -> {
             assert !hashTxtAreaData.getText().isEmpty();
             String hashedData = HashingUtils.getHash(hashTxtAreaData.getText(),
@@ -151,14 +174,6 @@ public class PsychoHasherGui extends JFrame {
         });
         resultPanel.add(computeHash);
 
-        resultTxtArea = new JTextArea();
-        resultTxtArea.setEditable(false);
-        resultTxtArea.setWrapStyleWord(false);
-        scrollPaneResult = new JScrollPane(resultTxtArea,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPaneResult.setBounds(30, 25, 640, 40);
-        resultPanel.add(scrollPaneResult);
     }
 
     private void createTopMenu() {
@@ -251,6 +266,24 @@ public class PsychoHasherGui extends JFrame {
         tabbedPane.addTab("Hash Files", hashFiles);
         tabbedPane.addTab("Hash Disks", hashDisks);
         tabbedPane.addTab("Verify Hashes", verifyHashes);
+        tabbedPane.addChangeListener((ChangeEvent e) -> {
+            switch (tabbedPane.getSelectedIndex()) {
+                case 0:
+                    break;
+                case 1:
+                    hashText.add(resultPanel);
+                    break;
+                case 2:
+                    hashFiles.add(resultPanel);
+                    break;
+                case 3:
+                    hashDisks.add(resultPanel);
+                    break;
+                case 4:
+                    verifyHashes.add(resultPanel);
+                    break;
+            }
+        });
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
@@ -267,7 +300,17 @@ public class PsychoHasherGui extends JFrame {
         /* ---Welcome Tab ends--- */
 
         /* ---HashText tab Starts--- */
+        createHashTextTab();
+        /* ---HashText tab ends--- */
+
+        /* ---HashFiles tab Starts--- */
+        createHashFilesTab();
+        /* ---HashFiles tab ends--- */
+    }
+
+    private void createHashTextTab() {
         hashText.setLayout(null);
+        resultTxtArea.setEnabled(true);
 
         hashTxtHeader = new JLabel("Get Hash for Text/String!");
         hashTxtHeader.setBounds(10, 10, 200, 30);
@@ -275,9 +318,9 @@ public class PsychoHasherGui extends JFrame {
         hashText.add(hashTxtHeader);
 
         hashTxtPasteButton = new JButton("Paste Text");
-        hashTxtPasteButton.
-                setToolTipText("Pastes text into the text area from System Clipboard");
-        hashTxtPasteButton.setBounds(20, 50, 150, 30);
+        hashTxtPasteButton.setToolTipText("Pastes text into the text area "
+                + "from System Clipboard");
+        hashTxtPasteButton.setBounds(20, 50, 150, 50);
         hashTxtPasteButton.addActionListener((ActionEvent e) -> {
             Transferable t = clipBrd.getContents(PsychoHasherGui.this);
 
@@ -298,12 +341,66 @@ public class PsychoHasherGui extends JFrame {
         hashTxtPaneData = new JScrollPane(hashTxtAreaData,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        hashTxtPaneData.setBounds(190, 50, 575, 120);
+        hashTxtPaneData.setBounds(190, 50, 575, 180);
+
         hashText.add(hashTxtPaneData);
-
         hashText.add(resultPanel);
+    }
 
-        /* ---HashText tab ends--- */
+    private void createHashFilesTab() {
+        hashFiles.setLayout(null);
+        resultTxtArea.setEnabled(false);
+
+        hashFilesHeader = new JLabel("Get Hash for Single/Multiple Files");
+        hashFilesHeader.setBounds(10, 10, 300, 30);
+        hashFilesHeader.setFont(new Font("Cambria", Font.BOLD, 14));
+        hashFiles.add(hashFilesHeader);
+
+        addFile = new JButton("Add Single File");
+        addFile.setToolTipText("Add a single file to hash.");
+        addFile.setBounds(20, 50, 150, 35);
+        hashFiles.add(addFile);
+
+        addFiles = new JButton("Add Multiple File");
+        addFiles.setToolTipText("Add multiple files for hashing.");
+        addFiles.setBounds(20, 95, 150, 35);
+        hashFiles.add(addFiles);
+
+        addFolder = new JButton("Add Files in Folder");
+        addFolder.
+                setToolTipText("Add all the files in a directory for hashing.");
+        addFolder.setBounds(20, 140, 150, 35);
+        hashFiles.add(addFolder);
+
+        removeSelected = new JButton("Remove Selected");
+        removeSelected.setToolTipText("Remove Selected file from hashing list.");
+        removeSelected.setBounds(20, 185, 150, 35);
+        hashFiles.add(removeSelected);
+
+        tableModel = new DefaultTableModel() {
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        filesTable = new JTable(tableModel);
+        filesTablePane = new JScrollPane(filesTable,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        filesTablePane.setBounds(190, 50, 575, 180);
+        hashFiles.add(filesTablePane);
+
+        hashFiles.add(resultPanel);
+    }
+
+    private void createStatusBar() {
+        statusBar = new JToolBar(SwingConstants.HORIZONTAL);
+        statusBar.
+                setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+        statusBar.setPreferredSize(new Dimension(getWidth(), 30));
+
+        mainPanel.add(statusBar, BorderLayout.SOUTH);
     }
 
     public static void main(String[] args) {
@@ -311,4 +408,5 @@ public class PsychoHasherGui extends JFrame {
             new PsychoHasherGui().setVisible(true);
         });
     }
+
 }
