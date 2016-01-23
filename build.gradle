@@ -4,7 +4,13 @@ sourceCompatibility = '1.8'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 if (!hasProperty('mainClass')) {
-    ext.mainClass = ''
+    ext.mainClass = 'net.letshackit.psychohasher.gui.PsychoHasherGui'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'net.letshackit.psychohasher.gui.PsychoHasherGui'
+    }
 }
 
 repositories {
