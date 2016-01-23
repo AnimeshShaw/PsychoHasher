@@ -294,10 +294,9 @@ public class PsychoHasherGui extends JFrame {
         welcomePane = new JEditorPane();
         welcomePane.setEditable(false);
         try {
-            welcomePane.setPage(this.getClass().
-                    getResource("resources/welcome.html"));
+            welcomePane.setPage(this.getClass().getClassLoader().getResource("welcome.html"));
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
+            System.err.println(ex.getMessage());            
         }
         welcome.add(welcomePane);
         /* ---Welcome Tab ends--- */
