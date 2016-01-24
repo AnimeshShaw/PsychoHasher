@@ -27,16 +27,25 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -46,6 +55,7 @@ import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.BevelBorder;
@@ -99,8 +109,14 @@ public class PsychoHasherGui extends JFrame {
     private JScrollPane filesTablePane;
     private JTable filesTable;
     private DefaultTableModel tableModel;
-    private JButton addFile, addFiles, addFolder, removeSelected;
+    private JButton addFile, addFiles, addFolder, removeSelected, exportToCsv;
+    private JFileChooser fc;
+    private LinkedHashSet<File> filesTohash;
 
+    /**
+     *
+     * @throws HeadlessException
+     */
     public PsychoHasherGui() throws HeadlessException {
         mainPanel = new JPanel(new BorderLayout());
         resultPanel = new JPanel();
@@ -296,7 +312,7 @@ public class PsychoHasherGui extends JFrame {
         try {
             welcomePane.setPage(this.getClass().getClassLoader().getResource("welcome.html"));
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());            
+            System.err.println(ex.getMessage());
         }
         welcome.add(welcomePane);
         /* ---Welcome Tab ends--- */
@@ -359,33 +375,16 @@ public class PsychoHasherGui extends JFrame {
     private void createHashFilesTab() {
         hashFiles.setLayout(null);
 
-        hashFilesHeader = new JLabel("Get Hash for Single/Multiple Files");
-        hashFilesHeader.setBounds(10, 10, 300, 30);
-        hashFilesHeader.setFont(new Font("Cambria", Font.BOLD, 14));
-        hashFiles.add(hashFilesHeader);
+        fc = new JFileChooser();
+        filesTohash = new LinkedHashSet<>();
 
-        addFile = new JButton("Add Single File");
-        addFile.setToolTipText("Add a single file to hash.");
-        addFile.setBounds(20, 50, 150, 35);
-        hashFiles.add(addFile);
+        Vector<String> colNames = new Vector<>();
+        colNames.add("Sl No.");
+        colNames.add("Filename");
+        colNames.add("Size (in KiB)");
+        colNames.add("Location");
 
-        addFiles = new JButton("Add Multiple File");
-        addFiles.setToolTipText("Add multiple files for hashing.");
-        addFiles.setBounds(20, 95, 150, 35);
-        hashFiles.add(addFiles);
-
-        addFolder = new JButton("Add Files in Folder");
-        addFolder.
-                setToolTipText("Add all the files in a directory for hashing.");
-        addFolder.setBounds(20, 140, 150, 35);
-        hashFiles.add(addFolder);
-
-        removeSelected = new JButton("Remove Selected");
-        removeSelected.setToolTipText("Remove Selected file from hashing list.");
-        removeSelected.setBounds(20, 185, 150, 35);
-        hashFiles.add(removeSelected);
-
-        tableModel = new DefaultTableModel() {
+        tableModel = new DefaultTableModel(colNames, 0) {
 
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -393,13 +392,167 @@ public class PsychoHasherGui extends JFrame {
             }
         };
         filesTable = new JTable(tableModel);
+        filesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         filesTablePane = new JScrollPane(filesTable,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         filesTablePane.setBounds(190, 50, 575, 180);
         hashFiles.add(filesTablePane);
 
+        hashFilesHeader = new JLabel("Get Hash for Single/Multiple Files");
+        hashFilesHeader.setBounds(10, 10, 300, 30);
+        hashFilesHeader.setFont(new Font("Cambria", Font.BOLD, 14));
+        hashFiles.add(hashFilesHeader);
+
+        exportToCsv = new JButton("Export to CSV");
+        exportToCsv.setBounds(610, 10, 150, 30);
+        exportToCsv.setFont(new Font("Cambria", Font.ITALIC, 14));
+        exportToCsv.addActionListener((ActionEvent e) -> {
+
+        });
+        hashFiles.add(exportToCsv);
+
+        addFile = new JButton("Add Single File");
+        addFile.setToolTipText("Add a single file to hash.");
+        addFile.setBounds(20, 50, 150, 35);
+        addFile.addActionListener((ActionEvent e) -> {
+            fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            fc.setMultiSelectionEnabled(false);
+
+            int rowCount = tableModel.getRowCount();
+            int retVal = fc.showOpenDialog(this);
+
+            if (retVal == JFileChooser.APPROVE_OPTION) {
+
+                File f = fc.getSelectedFile();
+
+                if (!filesTohash.contains(f)) {
+                    filesTohash.add(f);
+                    double size = f.length() / 1024;
+                    Vector<String> rowData = new Vector<>();
+                    rowData.add(Integer.toString(rowCount + 1));
+                    rowData.add(f.getName());
+                    rowData.add(Double.toString(size));
+                    rowData.add(f.getAbsolutePath());
+                    tableModel.addRow(rowData);
+                } else {
+                    JOptionPane.showMessageDialog(this, "File has been added already.",
+                            "Error! Duplicate file found", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        });
+        hashFiles.add(addFile);
+
+        addFiles = new JButton("Add Multiple Files");
+        addFiles.setToolTipText("Add multiple files for hashing.");
+        addFiles.setBounds(20, 95, 150, 35);
+        addFiles.addActionListener((ActionEvent e) -> {
+            fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            fc.setMultiSelectionEnabled(true);
+
+            int rowCount = tableModel.getRowCount();
+            int retVal = fc.showOpenDialog(this);
+
+            if (retVal == JFileChooser.APPROVE_OPTION) {
+
+                int skippedCount = 0;
+                File[] files = fc.getSelectedFiles();
+
+                for (File f : files) {
+                    if (!filesTohash.contains(f)) {
+                        filesTohash.add(f);
+                        double size = f.length() / 1024;
+                        Vector<String> rowData = new Vector<>();
+                        rowCount += 1;
+                        rowData.add(Integer.toString(rowCount));
+                        rowData.add(f.getName());
+                        rowData.add(Double.toString(size));
+                        rowData.add(f.getAbsolutePath());
+                        tableModel.addRow(rowData);
+                    } else {
+                        skippedCount++;
+                    }
+                }
+
+                if (skippedCount > 0) {
+                    JOptionPane.showMessageDialog(this, "Few files were already "
+                            + "present and hence skipped.", "Error! Duplicate "
+                            + "files found", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        });
+        hashFiles.add(addFiles);
+
+        addFolder = new JButton("Add Files in Folder");
+        addFolder.setToolTipText("Add all the files in a directory for "
+                + "hashing.");
+        addFolder.setBounds(20, 140, 150, 35);
+        addFolder.addActionListener((ActionEvent e) -> {
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setMultiSelectionEnabled(false);
+
+            int rowCount = tableModel.getRowCount();
+            int retVal = fc.showOpenDialog(this);
+            int skippedCount = 0;
+
+            if (retVal == JFileChooser.APPROVE_OPTION) {
+
+                Path dir = fc.getSelectedFile().toPath();
+
+                DirectoryStream.Filter<Path> filter = (Path entry)
+                        -> Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS);
+
+                try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir, filter)) {
+                    for (Path path : dirStream) {
+                        File f = path.toFile();
+                        if (!filesTohash.contains(f)) {
+                            filesTohash.add(f);
+                            double size = f.length() / 1024;
+                            Vector<String> rowData = new Vector<>();
+                            rowCount += 1;
+                            rowData.add(Integer.toString(rowCount));
+                            rowData.add(f.getName());
+                            rowData.add(Double.toString(size));
+                            rowData.add(f.getAbsolutePath());
+                            tableModel.addRow(rowData);
+                        } else {
+                            skippedCount++;
+                        }
+                    }
+
+                    if (skippedCount > 0) {
+                        JOptionPane.showMessageDialog(this, "Few files were already "
+                                + "present and hence skipped.", "Error! Duplicate "
+                                + "files found", JOptionPane.WARNING_MESSAGE);
+                    }
+
+                } catch (IOException ex) {
+                    System.err.println(ex.getMessage());
+                }
+            }
+        });
+        hashFiles.add(addFolder);
+
+        removeSelected = new JButton("Remove Selected");
+        removeSelected.setToolTipText("Remove Selected file from hashing list.");
+        removeSelected.setBounds(20, 185, 150, 35);
+        hashFiles.add(removeSelected);
+
         hashFiles.add(resultPanel);
+    }
+
+    private class HashFileTask extends SwingWorker<Void, LinkedHashSet<File>> {
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            return null;
+        }
+
+        @Override
+        protected void done() {
+
+        }
+
     }
 
     private void createHashDisksTab() {
