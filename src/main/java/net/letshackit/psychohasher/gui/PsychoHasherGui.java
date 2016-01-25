@@ -476,8 +476,9 @@ public class PsychoHasherGui extends JFrame {
 
                 if (skippedCount > 0) {
                     JOptionPane.showMessageDialog(this, "Few files were already "
-                            + "present and hence skipped.", "Error! Duplicate "
-                            + "files found", JOptionPane.WARNING_MESSAGE);
+                            + "present and hence skipped. Files Skipped: "
+                            + skippedCount, "Error! Duplicate files found",
+                            JOptionPane.WARNING_MESSAGE);
                 }
             }
         });
@@ -522,8 +523,9 @@ public class PsychoHasherGui extends JFrame {
 
                     if (skippedCount > 0) {
                         JOptionPane.showMessageDialog(this, "Few files were already "
-                                + "present and hence skipped.", "Error! Duplicate "
-                                + "files found", JOptionPane.WARNING_MESSAGE);
+                                + "present and hence skipped. Files Skipped: "
+                                + skippedCount, "Error! Duplicate files found",
+                                JOptionPane.WARNING_MESSAGE);
                     }
 
                 } catch (IOException ex) {

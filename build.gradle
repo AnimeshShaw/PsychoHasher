@@ -1,13 +1,19 @@
 apply plugin: 'java'
+apply plugin: 'application'
 
 sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
-if (!hasProperty('mainClass')) {
-    ext.mainClass = 'net.letshackit.psychohasher.gui.PsychoHasherGui'
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.10'
 }
 
+mainClassName = 'net.letshackit.psychohasher.gui.PsychoHasherGui'
+
 jar {
+    baseName = 'PsychoHasher'
+    version = '1.0-Alpha'
     manifest {
         attributes 'Main-Class': 'net.letshackit.psychohasher.gui.PsychoHasherGui'
     }
