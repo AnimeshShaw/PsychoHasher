@@ -53,14 +53,10 @@ import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -83,14 +79,6 @@ public class PsychoHasherGui extends JFrame {
 
     private final int DEF_WIDTH = 800;
     private final int DEF_HEIGHT = 500;
-
-    private JMenuBar menuBar;
-    private JMenu file, hashUtils, help;
-
-    private JMenuItem fileOpen, fileSave, fileExit;
-    private JMenuItem hashData, hashFile, hashDisk, verifyHash;
-
-    private JSeparator fileSep1, huSep1;
 
     private JTabbedPane tabbedPane;
 
@@ -127,7 +115,8 @@ public class PsychoHasherGui extends JFrame {
     private LinkedList<File> filesTohash;
 
     /**
-     *
+     * Builds the GUI and Initializes the components.
+     * 
      * @throws HeadlessException
      */
     public PsychoHasherGui() throws HeadlessException {
@@ -154,82 +143,14 @@ public class PsychoHasherGui extends JFrame {
         }
 
         clipBrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-
-        createTopMenu();
+        
         createMainTabbedPane();
         createStatusBar();
     }
-
-    private void createTopMenu() {
-        menuBar = new JMenuBar();
-        menuBar.setSize(new Dimension(DEF_WIDTH, 30));
-
-        file = new JMenu("File");
-        file.setPreferredSize(new Dimension(45, 30));
-        menuBar.add(file);
-
-        hashUtils = new JMenu("Hash Utils");
-        hashUtils.setPreferredSize(new Dimension(80, 30));
-        menuBar.add(hashUtils);
-
-        help = new JMenu("Help");
-        help.setPreferredSize(new Dimension(45, 30));
-        menuBar.add(help);
-
-        fileOpen = new JMenuItem("Open");
-        fileOpen.setPreferredSize(new Dimension(140, 25));
-        file.add(fileOpen);
-
-        fileSave = new JMenuItem("Save");
-        fileSave.setPreferredSize(new Dimension(140, 25));
-        file.add(fileSave);
-
-        fileSep1 = new JSeparator(SwingConstants.HORIZONTAL);
-        fileSep1.setPreferredSize(new Dimension(140, 5));
-        file.add(fileSep1);
-
-        fileExit = new JMenuItem("Exit");
-        fileExit.setPreferredSize(new Dimension(140, 25));
-        fileExit.addActionListener((ActionEvent e) -> {
-            this.dispose();
-        });
-        file.add(fileExit);
-
-        hashData = new JMenuItem("Hash Text");
-        hashData.setPreferredSize(new Dimension(140, 25));
-        hashData.addActionListener((ActionEvent e) -> {
-            tabbedPane.setSelectedIndex(1);
-        });
-        hashUtils.add(hashData);
-
-        hashFile = new JMenuItem("Hash Files");
-        hashFile.setPreferredSize(new Dimension(140, 25));
-        hashFile.addActionListener((ActionEvent e) -> {
-            tabbedPane.setSelectedIndex(2);
-        });
-        hashUtils.add(hashFile);
-
-        hashDisk = new JMenuItem("Hash Drives");
-        hashDisk.setPreferredSize(new Dimension(140, 25));
-        hashDisk.addActionListener((ActionEvent e) -> {
-            tabbedPane.setSelectedIndex(3);
-        });
-        hashUtils.add(hashDisk);
-
-        huSep1 = new JSeparator(SwingConstants.HORIZONTAL);
-        huSep1.setPreferredSize(new Dimension(140, 5));
-        hashUtils.add(huSep1);
-
-        verifyHash = new JMenuItem("Verify Hash");
-        verifyHash.setPreferredSize(new Dimension(140, 25));
-        verifyHash.addActionListener((ActionEvent e) -> {
-            tabbedPane.setSelectedIndex(4);
-        });
-        hashUtils.add(verifyHash);
-
-        mainPanel.add(menuBar, BorderLayout.NORTH);
-    }
-
+    
+    /**
+     * Create the Tabbed Menu.
+     */
     private void createMainTabbedPane() {
 
         /**
