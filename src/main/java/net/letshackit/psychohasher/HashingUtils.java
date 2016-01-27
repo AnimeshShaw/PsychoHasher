@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Core class containing Hashing Utility functions.
@@ -90,25 +90,16 @@ public class HashingUtils {
         byte[] mdbytes = null;
 
         try {
-            if (Files.notExists(path, LinkOption.NOFOLLOW_LINKS)) {
-                throw new FileNotFoundException("File not found!");
-            }
-
-            if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-                throw new IllegalArgumentException("Path shouldn't be a directory");
-            }
-
             MessageDigest md = MessageDigest.getInstance(hashAlgo);
             FileInputStream fis = new FileInputStream(path.toString());
             byte[] dataBytes = new byte[1024];
-
             int nread;
+
             while ((nread = fis.read(dataBytes)) != -1) {
                 md.update(dataBytes, 0, nread);
             }
 
             mdbytes = md.digest();
-
         } catch (NoSuchAlgorithmException | FileNotFoundException ex) {
             System.err.println("Couldn't determine the hashing algorithm or "
                     + "path to the file not found" + ex.getMessage());
@@ -163,5 +154,53 @@ public class HashingUtils {
      */
     public static String getFileHash(File file, HashType hashAlgo) {
         return getFileHash(file.toPath(), hashAlgo.getValue());
+    }
+
+    /**
+     * <p>
+     * Returns the hash of a group of files collectively</p>
+     *
+     * @param filesGrp Files group array to be hashed.
+     * @param hashAlgo Hashing algorithm to be used.
+     * @return Hex encoded hash of the file
+     */
+    public static String getGroupFilesHash(File[] filesGrp, String hashAlgo) {
+        byte[] dataBytes = new byte[1024];
+        byte[] mdbytes = null;
+        try {
+            MessageDigest md = MessageDigest.getInstance(hashAlgo);
+
+            for (File file : filesGrp) {
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    int nread;
+                    while ((nread = fis.read(dataBytes)) != -1) {
+                        md.update(dataBytes, 0, nread);
+                    }
+                } catch (FileNotFoundException ex) {
+                    Logger.getLogger(HashingUtils.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IOException ex) {
+                    Logger.getLogger(HashingUtils.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                mdbytes = md.digest();
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(HashingUtils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return byteArrayToHex(mdbytes);
+    }
+
+    /**
+     * <p>
+     * Returns the hash of a group of files collectively</p>
+     *
+     * @param filesGrp Files group array to be hashed.
+     * @param hashAlgo Hashing algorithm to be used. It is of type
+     * {@link net.letshackit.psychohasher.HashType}
+     * @see net.letshackit.psychohasher.HashType
+     * @return Hex encoded hash of the file
+     */
+    public static String getGroupFilesHash(File[] filesGrp, HashType hashAlgo) {
+        return getGroupFilesHash(filesGrp, hashAlgo.getValue());
     }
 }
