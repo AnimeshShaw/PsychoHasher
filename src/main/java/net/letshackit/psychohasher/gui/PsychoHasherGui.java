@@ -78,14 +78,14 @@ import net.letshackit.psychohasher.HashingUtils;
 public class PsychoHasherGui extends JFrame {
 
     private final int DEF_WIDTH = 800;
-    private final int DEF_HEIGHT = 500;
+    private final int DEF_HEIGHT = 480;
 
     private JTabbedPane tabbedPane;
 
     private JEditorPane welcomePane;
 
     private final JPanel mainPanel, resultPanel;
-    private JPanel welcome, hashText, hashFiles, hashDisks, verifyHashes;
+    private JPanel welcome, hashText, hashFiles, hashFilesGroup, verifyHashes;
 
     private JToolBar statusBar;
 
@@ -116,7 +116,7 @@ public class PsychoHasherGui extends JFrame {
 
     /**
      * Builds the GUI and Initializes the components.
-     * 
+     *
      * @throws HeadlessException
      */
     public PsychoHasherGui() throws HeadlessException {
@@ -143,11 +143,11 @@ public class PsychoHasherGui extends JFrame {
         }
 
         clipBrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-        
+
         createMainTabbedPane();
         createStatusBar();
     }
-    
+
     /**
      * Create the Tabbed Menu.
      */
@@ -159,7 +159,7 @@ public class PsychoHasherGui extends JFrame {
         welcome = new JPanel(new FlowLayout());
         hashText = new JPanel();
         hashFiles = new JPanel();
-        hashDisks = new JPanel();
+        hashFilesGroup = new JPanel();
         verifyHashes = new JPanel();
 
         /**
@@ -169,7 +169,7 @@ public class PsychoHasherGui extends JFrame {
         tabbedPane.addTab("Welcome", welcome);
         tabbedPane.addTab("Hash Text", hashText);
         tabbedPane.addTab("Hash Files", hashFiles);
-        tabbedPane.addTab("Hash Disks", hashDisks);
+        tabbedPane.addTab("Hash Files Group", hashFilesGroup);
         tabbedPane.addTab("Verify Hashes", verifyHashes);
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
@@ -194,7 +194,7 @@ public class PsychoHasherGui extends JFrame {
         /* ---HashFiles tab ends--- */
 
         /* ---HashDisks tab Starts--- */
-        createHashDisksTab();
+        createHashFilesGroupTab();
         /* ---HashDisks tab ends--- */
 
         /* ---Verify Hashes tab Starts--- */
@@ -310,7 +310,7 @@ public class PsychoHasherGui extends JFrame {
         filesTablePane = new JScrollPane(filesTable,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        filesTablePane.setBounds(20, 50, 740, 300);
+        filesTablePane.setBounds(20, 50, 750, 310);
         hashFiles.add(filesTablePane);
 
         hashFilesHeader = new JLabel("Get Hash for Single/Multiple Files");
@@ -320,7 +320,7 @@ public class PsychoHasherGui extends JFrame {
 
         exportToTsv = new JButton("Export as TSV");
         exportToTsv.setToolTipText("Export the table and save as TSV file in the current directory");
-        exportToTsv.setBounds(610, 10, 150, 30);
+        exportToTsv.setBounds(620, 370, 150, 35);
         exportToTsv.setFont(new Font("Cambria", Font.CENTER_BASELINE, 15));
         exportToTsv.addActionListener((ActionEvent e) -> {
             if (tableModel.getRowCount() > 0) {
@@ -359,7 +359,7 @@ public class PsychoHasherGui extends JFrame {
 
         addFile = new JButton("Add Single File");
         addFile.setToolTipText("Add a single file to hash.");
-        addFile.setBounds(20, 360, 140, 35);
+        addFile.setBounds(20, 370, 140, 35);
         addFile.addActionListener((ActionEvent e) -> {
             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             fc.setMultiSelectionEnabled(false);
@@ -391,7 +391,7 @@ public class PsychoHasherGui extends JFrame {
 
         addFiles = new JButton("Add Multiple Files");
         addFiles.setToolTipText("Add multiple files for hashing.");
-        addFiles.setBounds(170, 360, 140, 35);
+        addFiles.setBounds(170, 370, 140, 35);
         addFiles.addActionListener((ActionEvent e) -> {
             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             fc.setMultiSelectionEnabled(true);
@@ -434,7 +434,7 @@ public class PsychoHasherGui extends JFrame {
         addFolder = new JButton("Add Files in Folder");
         addFolder.setToolTipText("Add all the files in a directory for "
                 + "hashing.");
-        addFolder.setBounds(320, 360, 140, 35);
+        addFolder.setBounds(320, 370, 140, 35);
         addFolder.addActionListener((ActionEvent e) -> {
             fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fc.setMultiSelectionEnabled(false);
@@ -485,7 +485,7 @@ public class PsychoHasherGui extends JFrame {
 
         removeAll = new JButton("Remove All");
         removeAll.setToolTipText("Remove all files from the table.");
-        removeAll.setBounds(470, 360, 140, 35);
+        removeAll.setBounds(470, 370, 140, 35);
         removeAll.addActionListener((ActionEvent e) -> {
             tableModel.setRowCount(0);
             filesTohash.clear();
@@ -496,7 +496,7 @@ public class PsychoHasherGui extends JFrame {
         filesComputeHash = new JButton("Compute Hash!");
         filesComputeHash.setEnabled(false);
         filesComputeHash.setToolTipText("Compute hash for all the files in the table");
-        filesComputeHash.setBounds(620, 360, 140, 35);
+        filesComputeHash.setBounds(610, 10, 150, 30);
         filesComputeHash.setFont(new Font("Cambria", Font.BOLD, 15));
         filesComputeHash.addActionListener((ActionEvent e) -> {
             createHashingProgressDialog();
@@ -629,10 +629,15 @@ public class PsychoHasherGui extends JFrame {
             while (itr.hasNext()) {
                 failIfInterrupted();
                 File f = itr.next();
-                hashes.add(HashingUtils.getFileHash(f, hashType));
-                publish("Hashing file " + f.getName());
                 count += 1;
                 setProgress((count * 100) / filesCount);
+                if (f.canRead()) {
+                    publish("Hashing file - " + f.getName());
+                    hashes.add(HashingUtils.getFileHash(f, hashType));
+                } else {
+                    publish("Permission Denied. Unable to Hash file - " + f.getName());
+                    hashes.add("N/A");
+                }
             }
 
             return hashes;
@@ -655,8 +660,8 @@ public class PsychoHasherGui extends JFrame {
 
     }
 
-    private void createHashDisksTab() {
-        hashDisks.setLayout(null);
+    private void createHashFilesGroupTab() {
+        hashFilesGroup.setLayout(null);
     }
 
     private void verifyHashesTab() {
@@ -665,10 +670,9 @@ public class PsychoHasherGui extends JFrame {
 
     private void createStatusBar() {
         statusBar = new JToolBar(SwingConstants.HORIZONTAL);
-        statusBar.
-                setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+        statusBar.setBorder(BorderFactory.createBevelBorder(
+                BevelBorder.LOWERED));
         statusBar.setPreferredSize(new Dimension(getWidth(), 30));
-
         mainPanel.add(statusBar, BorderLayout.SOUTH);
     }
 
