@@ -7,8 +7,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Iterator;
 
 /**
  * Core class containing Hashing Utility functions.
@@ -23,7 +22,7 @@ public class HashingUtils {
      * @param bytes Byte Array to be converted to Hex String.
      * @return Returns the hex string for {@code bytes} array.
      */
-    private static String byteArrayToHex(byte[] bytes) {
+    public static String byteArrayToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < bytes.length; i++) {
             sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).
@@ -64,16 +63,7 @@ public class HashingUtils {
      * @return Hex encoded hash of the string data.
      */
     public static String getHash(String data, HashType hashAlgo) {
-        byte[] mdBytes = null;
-        try {
-            MessageDigest md = MessageDigest.getInstance(hashAlgo.getValue());
-            md.update(data.getBytes());
-            mdBytes = md.digest();
-        } catch (NoSuchAlgorithmException ex) {
-            System.err.println("Couldn't determine the hashing algorithm." + ex.
-                    getMessage());
-        }
-        return byteArrayToHex(mdBytes);
+        return getHash(data, hashAlgo.getValue());
     }
 
     /**
@@ -89,16 +79,13 @@ public class HashingUtils {
     public static String getFileHash(Path path, String hashAlgo) {
         byte[] mdbytes = null;
 
-        try {
+        try (FileInputStream fis = new FileInputStream(path.toString())) {
             MessageDigest md = MessageDigest.getInstance(hashAlgo);
-            FileInputStream fis = new FileInputStream(path.toString());
             byte[] dataBytes = new byte[1024];
             int nread;
-
             while ((nread = fis.read(dataBytes)) != -1) {
                 md.update(dataBytes, 0, nread);
             }
-
             mdbytes = md.digest();
         } catch (NoSuchAlgorithmException | FileNotFoundException ex) {
             System.err.println("Couldn't determine the hashing algorithm or "
@@ -177,17 +164,65 @@ public class HashingUtils {
                         md.update(dataBytes, 0, nread);
                     }
                 } catch (FileNotFoundException ex) {
-                    Logger.getLogger(HashingUtils.class.getName()).log(Level.SEVERE, null, ex);
+                    System.err.println(ex.getMessage());
                 } catch (IOException ex) {
-                    Logger.getLogger(HashingUtils.class.getName()).log(Level.SEVERE, null, ex);
+                    System.err.println(ex.getMessage());
                 }
                 mdbytes = md.digest();
             }
         } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(HashingUtils.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println(ex.getMessage());
         }
 
         return byteArrayToHex(mdbytes);
+    }
+
+    /**
+     * <p>
+     * returns the hash of a group of files collectively</p>
+     *
+     * @param filesGrp Iterator representing group of files to be hashed.
+     * @param hashAlgo Hashing algorithm to be used.
+     * @return Hex encoded hash of the file
+     */
+    public static String getGroupFilesHash(Iterator<File> filesGrp, String hashAlgo) {
+        byte[] dataBytes = new byte[1024];
+        byte[] mdbytes = null;
+        try {
+            MessageDigest md = MessageDigest.getInstance(hashAlgo);
+
+            while (filesGrp.hasNext()) {
+                try (FileInputStream fis = new FileInputStream(filesGrp.next())) {
+                    int nread;
+                    while ((nread = fis.read(dataBytes)) != -1) {
+                        md.update(dataBytes, 0, nread);
+                    }
+                } catch (FileNotFoundException ex) {
+                    System.err.println(ex.getMessage());
+                } catch (IOException ex) {
+                    System.err.println(ex.getMessage());
+                }
+                mdbytes = md.digest();
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            System.err.println(ex.getMessage());
+        }
+
+        return byteArrayToHex(mdbytes);
+    }
+
+    /**
+     * <p>
+     * returns the hash of a group of files collectively</p>
+     *
+     * @param filesGrp Iterator representing group of files to be hashed.
+     * @param hashAlgo Hashing algorithm to be used. It is of type
+     * {@link net.letshackit.psychohasher.HashType}
+     * @see net.letshackit.psychohasher.HashType
+     * @return Hex encoded hash of the file
+     */
+    public static String getGroupFilesHash(Iterator<File> filesGrp, HashType hashAlgo) {
+        return getGroupFilesHash(filesGrp, hashAlgo.getValue());
     }
 
     /**
