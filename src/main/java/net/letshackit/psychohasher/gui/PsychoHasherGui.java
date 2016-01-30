@@ -31,6 +31,8 @@ import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -38,14 +40,17 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -99,16 +104,24 @@ public class PsychoHasherGui extends JFrame {
 
     private JFileChooser fc;
 
+    /* Fields declaration for Custom Progress Dialog */
+    private JDialog fileHasherDialog = null;
+    private JProgressBar progressBar;
+    private JTextArea hashLogTxtArea;
+    private JButton close;
+    private JScrollPane logPane;
+    private JPanel dialogPanel;
+
     /* Fields declaration for ResultPanel */
     private JComboBox<HashType> hashAlgosCombo;
     private JTextArea resultTxtArea;
-    private JButton copyToClipboard, computeHash;
+    private JButton copyToClipboard;
     private JScrollPane scrollPaneResult;
 
     /* Fields declaration for HashText tab */
     private JLabel hashTxtHeader;
     private JScrollPane hashTxtPaneData;
-    private JButton hashTxtPasteButton;
+    private JButton hashTxtPasteButton, txtComputeHash;
     private JTextArea hashTxtAreaData;
 
     /* Fields Description for HashFiles tab */
@@ -121,12 +134,13 @@ public class PsychoHasherGui extends JFrame {
     private JComboBox<HashType> hashFilesAlgosCombo;
 
 
-    /* Fields Description for HashFiles tab */
+    /* Fields Description for Group File hash tab */
     private JLabel grpFilesHeader;
-    private JScrollPane grpFilesTablePane;
+    private JScrollPane grpFilesListScrollPane;
     private JList<File> grpFilesList;
-    private JButton grpAddFile, grpAddFiles, grpAddFolder, grpRemoveAll, grpExportToTsv,
-            grpComputeHash;
+    private JButton grpAddFile, grpAddFiles, grpAddFolder, grpRemoveSelec, grpRemoveAll,
+            grpExportResults, grpComputeHash;
+    private HashType hashAlgo;
 
     /**
      * Builds the GUI and Initializes the components.
@@ -149,10 +163,15 @@ public class PsychoHasherGui extends JFrame {
 
     private void initComponents() {
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException |
-                IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            System.err.println("Unable to set system look and feel.");
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+            //UIManager.setLookAndFeel("com.jtattoo.plaf.texture.TextureLookAndFeel");
+        } catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ex) {
+            System.err.println(ex.getMessage());
         }
 
         initGlobalDec();
@@ -202,19 +221,12 @@ public class PsychoHasherGui extends JFrame {
                 StringSelection strSelec = new StringSelection(resultTxtArea.
                         getText());
                 clipBrd.setContents(strSelec, null);
+            } else {
+                JOptionPane.showMessageDialog(this, "Result Text area is empty!",
+                        "Nothing to copy", JOptionPane.ERROR_MESSAGE);
             }
         });
         resultPanel.add(copyToClipboard);
-
-        computeHash = new JButton("Compute Hash!");
-        computeHash.setBounds(490, 90, 200, 40);
-        computeHash.addActionListener((ActionEvent e) -> {
-            String hashedData = HashingUtils.getHash(hashTxtAreaData.getText(),
-                    (HashType) hashAlgosCombo.getSelectedItem());
-            resultTxtArea.setText(hashedData);
-        });
-        resultPanel.add(computeHash);
-
     }
 
     /**
@@ -245,16 +257,22 @@ public class PsychoHasherGui extends JFrame {
                 case 0:
                     break;
                 case 1:
+                    txtComputeHash.setVisible(true);
+                    grpComputeHash.setVisible(false);
                     resultTxtArea.setText("");
                     hashText.add(resultPanel);
                     break;
                 case 2:
                     break;
                 case 3:
+                    txtComputeHash.setVisible(false);
+                    grpComputeHash.setVisible(true);
                     resultTxtArea.setText("");
                     hashFilesGroup.add(resultPanel);
                     break;
                 case 4:
+                    txtComputeHash.setVisible(false);
+                    grpComputeHash.setVisible(false);
                     resultTxtArea.setText("");
                     verifyHashes.add(resultPanel);
                     break;
@@ -328,8 +346,18 @@ public class PsychoHasherGui extends JFrame {
         hashTxtPaneData = new JScrollPane(hashTxtAreaData,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        hashTxtPaneData.setBounds(190, 50, 575, 180);
+        hashTxtPaneData.setBounds(190, 50, 590, 180);
         hashText.add(hashTxtPaneData);
+
+        txtComputeHash = new JButton("Compute Hash!");
+        txtComputeHash.setBounds(490, 90, 200, 40);
+        txtComputeHash.addActionListener((ActionEvent e) -> {
+            String hashedData = HashingUtils.getHash(hashTxtAreaData.getText(),
+                    (HashType) hashAlgosCombo.getSelectedItem());
+            resultTxtArea.setText(hashedData);
+        });
+        resultPanel.add(txtComputeHash);
+
     }
 
     private void createHashFilesTab() {
@@ -382,7 +410,7 @@ public class PsychoHasherGui extends JFrame {
                         writer.newLine();
                     }
                 } catch (IOException ex) {
-                    Logger.getLogger(PsychoHasherGui.class.getName()).log(Level.SEVERE, null, ex);
+                    System.err.println(ex.getMessage());
                 }
                 JOptionPane.showMessageDialog(this, "Table exported and saved as "
                         + "hashes.tsv", "Data export complete",
@@ -404,7 +432,7 @@ public class PsychoHasherGui extends JFrame {
         addFile.setToolTipText("Add a single file to hash.");
         addFile.setBounds(20, 370, 140, 35);
         addFile.addActionListener((ActionEvent e) -> {
-            fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.setMultiSelectionEnabled(false);
 
             int rowCount = tableModel.getRowCount();
@@ -436,7 +464,7 @@ public class PsychoHasherGui extends JFrame {
         addFiles.setToolTipText("Add multiple files for hashing.");
         addFiles.setBounds(170, 370, 140, 35);
         addFiles.addActionListener((ActionEvent e) -> {
-            fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.setMultiSelectionEnabled(true);
 
             int rowCount = tableModel.getRowCount();
@@ -474,7 +502,7 @@ public class PsychoHasherGui extends JFrame {
         });
         hashFiles.add(addFiles);
 
-        addFolder = new JButton("Add Files in Folder");
+        addFolder = new JButton("Add Folder");
         addFolder.setToolTipText("Add all the files in a directory for "
                 + "hashing.");
         addFolder.setBounds(320, 370, 140, 35);
@@ -539,22 +567,81 @@ public class PsychoHasherGui extends JFrame {
         filesComputeHash = new JButton("Compute Hash!");
         filesComputeHash.setEnabled(false);
         filesComputeHash.setToolTipText("Compute hash for all the files in the table");
-        filesComputeHash.setBounds(610, 10, 150, 30);
+        filesComputeHash.setBounds(610, 10, 160, 30);
         filesComputeHash.setFont(new Font("Cambria", Font.BOLD, 15));
         filesComputeHash.addActionListener((ActionEvent e) -> {
-            createFileHashingProgressDialog();
+            createHashingProgressDialog();
+
+            List<String> computedHashes = new LinkedList<>();
+            progressBar.setValue(0);
+            hashLogTxtArea.setText("");
+
+            HashFileTask hashFileTask = new HashFileTask(filesTohash, hashLogTxtArea,
+                    (HashType) hashFilesAlgosCombo.getSelectedItem());
+            hashFileTask.addPropertyChangeListener((PropertyChangeEvent evt) -> {
+                switch (evt.getPropertyName()) {
+                    case "progress":
+                        progressBar.setIndeterminate(false);
+                        progressBar.setValue((int) evt.getNewValue());
+                        break;
+                    case "state":
+                        switch ((SwingWorker.StateValue) evt.getNewValue()) {
+                            case DONE: {
+                                try {
+                                    close.setEnabled(true);
+                                    computedHashes.addAll(hashFileTask.get());
+
+                                    String selectedOption = ((HashType) hashFilesAlgosCombo
+                                            .getSelectedItem()).getValue();
+                                    int index = 4;
+
+                                    if (tableModel.getColumnCount() < 5) {
+                                        tableModel.addColumn(selectedOption);
+                                    } else {
+                                        boolean colFound = false;
+                                        for (index = 4; index < tableModel.getColumnCount(); index++) {
+                                            if (tableModel.getColumnName(index).equals(selectedOption)) {
+                                                colFound = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!colFound) {
+                                            tableModel.addColumn(selectedOption);
+                                        }
+                                    }
+
+                                    for (int i = 0; i < computedHashes.size(); i++) {
+                                        tableModel.setValueAt(computedHashes.get(i), i, index);
+                                    }
+                                } catch (InterruptedException | ExecutionException ex) {
+                                    System.err.println(ex.getMessage());
+                                }
+                            }
+                            break;
+                            case STARTED:
+                            case PENDING:
+                                progressBar.setVisible(true);
+                                progressBar.setIndeterminate(true);
+                        }
+                        break;
+                }
+            });
+            hashFileTask.execute();
+
         });
         hashFiles.add(filesComputeHash);
 
     }
 
-    private void createFileHashingProgressDialog() {
-        //setEnabled(false);
-        JDialog fileHasherDialog = new JDialog(this);
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setPreferredSize(new Dimension(400, 300));
+    private void createHashingProgressDialog() {
+        setEnabled(false);
+        fileHasherDialog = new JDialog(this);
+        dialogPanel = new JPanel(new BorderLayout());
+        dialogPanel.setSize(new Dimension(400, 300));
+        //dialogPanel.setPreferredSize(new Dimension(400, 300));
 
-        fileHasherDialog.setContentPane(panel);
+        fileHasherDialog.setContentPane(dialogPanel);
         fileHasherDialog.setAlwaysOnTop(true);
         fileHasherDialog.setVisible(true);
         fileHasherDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
@@ -564,81 +651,26 @@ public class PsychoHasherGui extends JFrame {
         fileHasherDialog.setSize(new Dimension(500, 300));
         fileHasherDialog.setModalityType(Dialog.ModalityType.TOOLKIT_MODAL);
 
-        JProgressBar progressBar = new JProgressBar();
+        progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
         progressBar.setVisible(true);
-        panel.add(progressBar, BorderLayout.SOUTH);
+        dialogPanel.add(progressBar, BorderLayout.SOUTH);
 
-        JTextArea txtArea = new JTextArea(10, 10);
-        JScrollPane pane = new JScrollPane(txtArea,
+        hashLogTxtArea = new JTextArea(10, 10);
+        logPane = new JScrollPane(hashLogTxtArea,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        pane.setBorder(BorderFactory.createTitledBorder("Update Logs"));
-        pane.getInsets().set(20, 20, 20, 20);
-        panel.add(pane, BorderLayout.CENTER);
+        logPane.setBorder(BorderFactory.createTitledBorder("Update Logs"));
+        logPane.getInsets().set(20, 20, 20, 20);
+        dialogPanel.add(logPane, BorderLayout.CENTER);
 
-        JButton close = new JButton("Close");
+        close = new JButton("Close");
         close.setEnabled(false);
         close.addActionListener((ActionEvent e) -> {
+            setEnabled(true);
             fileHasherDialog.dispose();
         });
-        panel.add(close, BorderLayout.NORTH);
-
-        List<String> computedHashes = new LinkedList<>();
-
-        HashFileTask hashFileTask = new HashFileTask(filesTohash, txtArea,
-                (HashType) hashFilesAlgosCombo.getSelectedItem());
-        hashFileTask.addPropertyChangeListener((PropertyChangeEvent evt) -> {
-            switch (evt.getPropertyName()) {
-                case "progress":
-                    progressBar.setIndeterminate(false);
-                    progressBar.setValue((int) evt.getNewValue());
-                    break;
-                case "state":
-                    switch ((SwingWorker.StateValue) evt.getNewValue()) {
-                        case DONE: {
-                            try {
-                                close.setEnabled(true);
-                                computedHashes.addAll(hashFileTask.get());
-
-                                String selectedOption = ((HashType) hashFilesAlgosCombo
-                                        .getSelectedItem()).getValue();
-                                int index = 4;
-
-                                if (tableModel.getColumnCount() < 5) {
-                                    tableModel.addColumn(selectedOption);
-                                } else {
-                                    boolean colFound = false;
-                                    for (index = 4; index < tableModel.getColumnCount(); index++) {
-                                        if (tableModel.getColumnName(index).equals(selectedOption)) {
-                                            colFound = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!colFound) {
-                                        tableModel.addColumn(selectedOption);
-                                    }
-                                }
-
-                                for (int i = 0; i < computedHashes.size(); i++) {
-                                    tableModel.setValueAt(computedHashes.get(i), i, index);
-                                }
-                            } catch (InterruptedException | ExecutionException ex) {
-                                Logger.getLogger(PsychoHasherGui.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                        }
-                        break;
-                        case STARTED:
-                        case PENDING:
-                            progressBar.setVisible(true);
-                            progressBar.setIndeterminate(true);
-                    }
-                    break;
-            }
-        });
-        hashFileTask.execute();
-
+        dialogPanel.add(close, BorderLayout.NORTH);
     }
 
     /**
@@ -715,10 +747,308 @@ public class PsychoHasherGui extends JFrame {
     private void createHashFilesGroupTab() {
         hashFilesGroup.setLayout(null);
 
-        grpFilesHeader = new JLabel("Get Hash for Single/Multiple Files");
+        grpFilesHeader = new JLabel("Compute Hash for group of files.");
         grpFilesHeader.setBounds(10, 10, 300, 30);
         grpFilesHeader.setFont(new Font("Cambria", Font.BOLD, 14));
         hashFilesGroup.add(grpFilesHeader);
+
+        DefaultListModel<File> listModal = new DefaultListModel<>();
+
+        grpFilesList = new JList<>(listModal);
+        grpFilesList.setDragEnabled(false);
+        grpFilesListScrollPane = new JScrollPane(grpFilesList,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        grpFilesListScrollPane.setBounds(190, 50, 575, 200);
+        grpFilesListScrollPane.setBorder(BorderFactory.createTitledBorder("List "
+                + "of files for group hashing"));
+        hashFilesGroup.add(grpFilesListScrollPane);
+
+        //(DefaultListModel<File>) grpFilesList.getModel();
+        grpAddFile = new JButton("Single File");
+        grpAddFile.setBounds(20, 50, 150, 35);
+        grpAddFile.addActionListener((ActionEvent e) -> {
+            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fc.setMultiSelectionEnabled(false);
+
+            int retVal = fc.showOpenDialog(this);
+
+            if (retVal == JFileChooser.APPROVE_OPTION) {
+                File f = fc.getSelectedFile();
+                listModal.addElement(f);
+            }
+            resultTxtArea.setText("");
+            grpComputeHash.setEnabled(true);
+        });
+        hashFilesGroup.add(grpAddFile);
+
+        grpAddFiles = new JButton("Add Multiple files");
+        grpAddFiles.setBounds(20, 90, 150, 35);
+        grpAddFiles.addActionListener((ActionEvent e) -> {
+            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fc.setMultiSelectionEnabled(true);
+
+            int retVal = fc.showOpenDialog(this);
+
+            if (retVal == JFileChooser.APPROVE_OPTION) {
+                File[] files = fc.getSelectedFiles();
+                Arrays.asList(files).iterator().forEachRemaining(listModal::addElement);
+            }
+            resultTxtArea.setText("");
+            grpComputeHash.setEnabled(true);
+        });
+        hashFilesGroup.add(grpAddFiles);
+
+        grpAddFolder = new JButton("Add Folder");
+        grpAddFolder.setToolTipText("Add all files in a folder");
+        grpAddFolder.setBounds(20, 130, 150, 35);
+        grpAddFolder.addActionListener((ActionEvent e) -> {
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setMultiSelectionEnabled(false);
+
+            int retVal = fc.showOpenDialog(this);
+
+            if (retVal == JFileChooser.APPROVE_OPTION) {
+                Path dir = fc.getSelectedFile().toPath();
+
+                DirectoryStream.Filter<Path> filter = (Path entry)
+                        -> Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS);
+
+                try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir, filter)) {
+                    dirStream.iterator().forEachRemaining((item)
+                            -> listModal.addElement(item.toFile()));
+                } catch (IOException ex) {
+                    System.err.println(ex.getMessage());
+                }
+            }
+            resultTxtArea.setText("");
+            grpComputeHash.setEnabled(true);
+        });
+        hashFilesGroup.add(grpAddFolder);
+
+        grpRemoveSelec = new JButton("Remove Selected");
+        grpRemoveSelec.setToolTipText("Remove selected file from the list");
+        grpRemoveSelec.setBounds(20, 170, 150, 35);
+        grpRemoveSelec.addActionListener((ActionEvent e) -> {
+            if (!listModal.isEmpty()) {
+                int index = grpFilesList.getSelectedIndex();
+                if (index == -1) {
+                    JOptionPane.showMessageDialog(hashFilesGroup, "No file Selected.",
+                            "Unable to Remove.", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    listModal.remove(index);
+                }
+            } else {
+                JOptionPane.showMessageDialog(hashFilesGroup, "No files added yet. "
+                        + "The list is empty.", "Empty List", JOptionPane.ERROR_MESSAGE);
+            }
+
+            if (listModal.isEmpty()) {
+                grpComputeHash.setEnabled(false);
+            }
+            resultTxtArea.setText("");
+        });
+        hashFilesGroup.add(grpRemoveSelec);
+
+        grpRemoveAll = new JButton("Remove All");
+        grpRemoveAll.setToolTipText("Remove all the files from the list");
+        grpRemoveAll.setBounds(20, 210, 150, 35);
+        grpRemoveAll.addActionListener((ActionEvent e) -> {
+            if (!listModal.isEmpty()) {
+                listModal.removeAllElements();
+            } else {
+                JOptionPane.showMessageDialog(hashFilesGroup, "No files added yet. "
+                        + "The list is empty.", "Empty List", JOptionPane.ERROR_MESSAGE);
+            }
+            resultTxtArea.setText("");
+            grpComputeHash.setEnabled(false);
+        });
+        hashFilesGroup.add(grpRemoveAll);
+
+        grpExportResults = new JButton("Export Results");
+        grpExportResults.setToolTipText("Export the table and save as TSV file in the"
+                + " current directory");
+        grpExportResults.setBounds(610, 10, 150, 35);
+        grpExportResults.setFont(new Font("Cambria", Font.CENTER_BASELINE, 15));
+        grpExportResults.addActionListener((ActionEvent e) -> {
+            if (!resultTxtArea.getText().isEmpty()) {
+                Path path = Paths.get("files_group_result.txt");
+                try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+                    writer.write("List of files group hashed:");
+                    writer.newLine();
+                    writer.newLine();
+
+                    Enumeration<File> enumer = listModal.elements();
+
+                    while (enumer.hasMoreElements()) {
+                        writer.write(enumer.nextElement().getAbsolutePath());
+                        writer.newLine();
+                    }
+
+                    writer.newLine();
+                    writer.write("Digest Algorithm: " + hashAlgo.getValue());
+                    writer.newLine();
+                    writer.write("Message Digest/Hash: " + resultTxtArea.getText());
+                } catch (IOException ex) {
+                    System.err.println(ex.getMessage());
+                }
+
+                JOptionPane.showMessageDialog(this, "List has been exported with "
+                        + "final Hash result.", "Export Successful", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Hash Not computed yet. Compute "
+                        + "hash and then try again.", "Unable to Export", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+        hashFilesGroup.add(grpExportResults);
+
+        grpComputeHash = new JButton("Compute Hash!");
+        grpComputeHash.setEnabled(false);
+        grpComputeHash.setBounds(490, 90, 200, 40);
+        grpComputeHash.setFont(new Font("Cambria", Font.BOLD, 15));
+        grpComputeHash.addActionListener((ActionEvent e) -> {
+            createHashingProgressDialog();
+
+            progressBar.setValue(0);
+            hashLogTxtArea.setText("");
+            hashAlgo = (HashType) hashAlgosCombo.getSelectedItem();
+
+            HashGroupFilesTask groupFilesTask = new HashGroupFilesTask(listModal.elements(),
+                    listModal.getSize(), hashLogTxtArea, hashAlgo);
+
+            groupFilesTask.addPropertyChangeListener((PropertyChangeEvent evt) -> {
+                switch (evt.getPropertyName()) {
+                    case "progress":
+                        progressBar.setIndeterminate(false);
+                        progressBar.setValue((int) evt.getNewValue());
+                        break;
+                    case "state":
+                        switch ((SwingWorker.StateValue) evt.getNewValue()) {
+                            case DONE: {
+                                try {
+                                    resultTxtArea.setText(groupFilesTask.get());
+                                    close.setEnabled(true);
+                                } catch (InterruptedException | ExecutionException ex) {
+                                    System.err.println(ex.getMessage());
+                                }
+                            }
+                            break;
+                            case STARTED:
+                            case PENDING:
+                                progressBar.setVisible(true);
+                                progressBar.setIndeterminate(true);
+                        }
+                        break;
+                }
+            });
+            groupFilesTask.execute();
+
+        });
+        resultPanel.add(grpComputeHash);
+
+    }
+
+    private class HashGroupFilesTask extends SwingWorker<String, String> {
+
+        private final Enumeration<File> filesToHash;
+        private final JTextArea txtArea;
+        private String grpHash;
+        private final HashType hashType;
+        private final int fileCount;
+
+        /**
+         * Initializes the variables to be used during the processing of worker
+         * thread.
+         *
+         * @param filesToHash Enumeration of all the files to calculate hash.
+         * @param txtArea JTextArea in which the hashing progress is logged.
+         * @param hashType Type to hash algorithm to be used
+         */
+        public HashGroupFilesTask(final Enumeration<File> filesToHash, int fileCount,
+                final JTextArea txtArea, final HashType hashType) {
+            this.filesToHash = filesToHash;
+            this.txtArea = txtArea;
+            this.hashType = hashType;
+            this.fileCount = fileCount;
+            grpHash = null;
+        }
+
+        /**
+         * In case of any interruption occurs then throw exception.
+         *
+         * @throws InterruptedException
+         */
+        private void failIfInterrupted() throws InterruptedException {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException("Interrupted while hashing files");
+            }
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+            int count = 0;
+            byte[] dataBytes = new byte[1024];
+            byte[] mdbytes;
+            boolean permErr = false;
+            try {
+                MessageDigest md = MessageDigest.getInstance(hashType.getValue());
+                publish("File hashing Procedure started. Files to Hash:" + fileCount);
+
+                while (filesToHash.hasMoreElements()) {
+                    failIfInterrupted();
+                    File f = filesToHash.nextElement();
+                    count += 1;
+
+                    publish("Working with file: " + f.getName());
+
+                    if (!f.canRead()) {
+                        permErr = true;
+                        publish("Permission Denied. Unable to create hash for "
+                                + "the said file group - " + f.getName());
+                        break;
+                    }
+
+                    setProgress((count * 100) / fileCount);
+
+                    try (FileInputStream fis = new FileInputStream(f)) {
+                        int nread;
+                        while ((nread = fis.read(dataBytes)) != -1) {
+                            md.update(dataBytes, 0, nread);
+                        }
+                    } catch (FileNotFoundException ex) {
+                        System.err.println(ex.getMessage());
+                    } catch (IOException ex) {
+                        System.err.println(ex.getMessage());
+                    }
+                }
+
+                if (!permErr) {
+                    mdbytes = md.digest();
+                    grpHash = HashingUtils.byteArrayToHex(mdbytes);
+                }
+
+            } catch (NoSuchAlgorithmException ex) {
+                System.err.println(ex.getMessage());
+            }
+
+            return grpHash;
+        }
+
+        @Override
+        protected void process(List<String> chunks) {
+            chunks.stream().map((str) -> {
+                txtArea.append(str);
+                return str;
+            }).forEach((_item) -> {
+                txtArea.append("\n");
+            });
+        }
+
+        @Override
+        protected void done() {
+            txtArea.append("Hash Computation Complete");
+        }
+
     }
 
     private void verifyHashesTab() {
@@ -730,6 +1060,7 @@ public class PsychoHasherGui extends JFrame {
         statusBar.setBorder(BorderFactory.createBevelBorder(
                 BevelBorder.LOWERED));
         statusBar.setPreferredSize(new Dimension(getWidth(), 30));
+        statusBar.setFloatable(false);
         mainPanel.add(statusBar, BorderLayout.SOUTH);
     }
 
