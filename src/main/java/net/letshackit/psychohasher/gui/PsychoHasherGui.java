@@ -16,6 +16,7 @@
 package net.letshackit.psychohasher.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -304,8 +305,11 @@ public class PsychoHasherGui extends JFrame {
 
     private void createWelcomeTab() {
         welcomePane = new JEditorPane();
+        welcomePane.setSize(welcome.getSize());
         welcomePane.setEditable(false);
+        welcomePane.setBorder(null);
         try {
+
             welcomePane.setPage(this.getClass().getClassLoader()
                     .getResource("welcome.html"));
         } catch (IOException ex) {
