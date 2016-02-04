@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'application'
+mainClassName = 'net.letshackit.psychohasher.gui.PsychoHasherGui'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -8,8 +9,6 @@ targetCompatibility = '1.8'
 task wrapper(type: Wrapper) {
     gradleVersion = '2.10'
 }
-
-mainClassName = 'net.letshackit.psychohasher.gui.PsychoHasherGui'
 
 jar {
     baseName = 'PsychoHasher'

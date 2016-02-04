@@ -16,7 +16,6 @@
 package net.letshackit.psychohasher.gui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -86,7 +85,7 @@ import net.letshackit.psychohasher.HashingUtils;
 public class PsychoHasherGui extends JFrame {
 
     private final int DEF_WIDTH = 800;
-    private final int DEF_HEIGHT = 480;
+    private final int DEF_HEIGHT = 500;
 
     /* Global Components declaration */
     private JTabbedPane tabbedPane;
@@ -350,7 +349,7 @@ public class PsychoHasherGui extends JFrame {
         hashTxtPaneData = new JScrollPane(hashTxtAreaData,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        hashTxtPaneData.setBounds(190, 50, 590, 180);
+        hashTxtPaneData.setBounds(180, 50, 590, 200);
         hashText.add(hashTxtPaneData);
 
         txtComputeHash = new JButton("Compute Hash!");
