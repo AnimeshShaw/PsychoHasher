@@ -133,7 +133,6 @@ public class PsychoHasherGui extends JFrame {
             filesComputeHash;
     private JComboBox<HashType> hashFilesAlgosCombo;
 
-
     /* Fields Description for Group File hash tab */
     private JLabel grpFilesHeader;
     private JScrollPane grpFilesListScrollPane;
@@ -141,6 +140,12 @@ public class PsychoHasherGui extends JFrame {
     private JButton grpAddFile, grpAddFiles, grpAddFolder, grpRemoveSelec, grpRemoveAll,
             grpExportResults, grpComputeHash;
     private HashType hashAlgo;
+
+    /* Field Decriptio for Group File hash tab */
+    private JLabel verifyFilesHeader;
+    private JScrollPane verifyFilesListScrollPane;
+    private JList<File> verifyFilesList;
+    private JButton loadSavedHash, verifyRemoveAll, verifyComputeHash;
 
     /**
      * Builds the GUI and Initializes the components.
@@ -247,7 +252,7 @@ public class PsychoHasherGui extends JFrame {
          * Initialize tabbed pane and create tabs
          */
         tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Welcome", welcome);
+        tabbedPane.addTab("About pH & Help", welcome);
         tabbedPane.addTab("Hash Text", hashText);
         tabbedPane.addTab("Hash Files", hashFiles);
         tabbedPane.addTab("Hash Files Group", hashFilesGroup);
@@ -259,6 +264,7 @@ public class PsychoHasherGui extends JFrame {
                 case 1:
                     txtComputeHash.setVisible(true);
                     grpComputeHash.setVisible(false);
+                    verifyComputeHash.setVisible(false);
                     resultTxtArea.setText("");
                     hashText.add(resultPanel);
                     break;
@@ -267,12 +273,14 @@ public class PsychoHasherGui extends JFrame {
                 case 3:
                     txtComputeHash.setVisible(false);
                     grpComputeHash.setVisible(true);
+                    verifyComputeHash.setVisible(false);
                     resultTxtArea.setText("");
                     hashFilesGroup.add(resultPanel);
                     break;
                 case 4:
                     txtComputeHash.setVisible(false);
                     grpComputeHash.setVisible(false);
+                    verifyComputeHash.setVisible(true);
                     resultTxtArea.setText("");
                     verifyHashes.add(resultPanel);
                     break;
@@ -1056,6 +1064,17 @@ public class PsychoHasherGui extends JFrame {
 
     private void verifyHashesTab() {
         verifyHashes.setLayout(null);
+
+        verifyFilesHeader = new JLabel("Verify Saved Hashes");
+        verifyFilesHeader.setBounds(10, 10, 200, 30);
+        verifyFilesHeader.setFont(new Font("Cambria", Font.BOLD, 14));
+        verifyHashes.add(verifyFilesHeader);
+
+        verifyComputeHash = new JButton("Compute Hash!");
+        verifyComputeHash.setEnabled(false);
+        verifyComputeHash.setBounds(490, 90, 200, 40);
+        verifyComputeHash.setFont(new Font("Cambria", Font.BOLD, 15));
+        resultPanel.add(verifyComputeHash);
     }
 
     private void createStatusBar() {
