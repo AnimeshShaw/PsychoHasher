@@ -33,6 +33,36 @@ __4. Single hash for group of files__
 
 ![](http://i.imgur.com/NFhJQKT.png)
 
+## Building project from source
+
+Before we proceed further I am assuming that you have **git** installed and in system path, and **JAVA_HOME** variable is set.
+
+**Step 1: Clone the repository from github**
+
+    git clone https://github.com/AnimeshShaw/PsychoHasher.git
+
+![](http://i.imgur.com/131Zccs.png)
+
+**Step 2: Build the project**
+
+The project was built with gradle, so if you have gradle installed in your system and the path is set then you can simple build as follows:
+
+    gradle build
+
+Even if you don't have gradle, don't worry the project comes along with wrappers for both windows [gradlew.bat] and linux [gradlew]. Simply execute the following [in case of windows] and let it do its magic
+
+    gradlew.bat build
+
+**Step 3: Run the project**
+
+Now its time to run our application. Simply execute the following:
+
+    gradlew.bat run
+
+Observe the screenshot to understand better.
+
+![](http://i.imgur.com/TicXQDB.png)
+
 ## ToDo
 
 * Add an option to compute hash for logical volumes.
