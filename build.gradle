@@ -16,6 +16,10 @@ jar {
     manifest {
         attributes 'Main-Class': 'net.letshackit.psychohasher.gui.PsychoHasherGui'
     }
+    
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 repositories {
