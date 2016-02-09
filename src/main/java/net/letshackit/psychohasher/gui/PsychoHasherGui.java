@@ -78,6 +78,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
 import net.letshackit.psychohasher.HashType;
 import net.letshackit.psychohasher.HashingUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -144,6 +146,8 @@ public class PsychoHasherGui extends JFrame {
             grpExportResults, grpComputeHash;
     private HashType hashAlgo;
 
+    final static Logger logger = LogManager.getLogger(PsychoHasherGui.class);
+
     /**
      * Builds the GUI and Initializes the components.
      *
@@ -160,6 +164,7 @@ public class PsychoHasherGui extends JFrame {
         setTitle("PsychoHasher - All Purpose Hashing tool");
         setContentPane(mainPanel);
         setLayout(new BorderLayout());
+        setIconImage(new ImageIcon(this.getClass().getClassLoader().getResource("Hash.png")).getImage());
         initComponents();
     }
 
@@ -173,9 +178,8 @@ public class PsychoHasherGui extends JFrame {
             }
             //UIManager.setLookAndFeel("com.jtattoo.plaf.texture.TextureLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ex) {
-            System.err.println(ex.getMessage());
+            logger.error("Problem with LAF", ex);
         }
-        setIconImage(new ImageIcon(this.getClass().getClassLoader().getResource("Hash.png")).getImage());
 
         initGlobalDec();
         createResultPanel();
@@ -303,7 +307,7 @@ public class PsychoHasherGui extends JFrame {
             welcomePane.setPage(this.getClass().getClassLoader()
                     .getResource("welcome.html"));
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
+            logger.error("Resource welcome.html not found", ex);
         }
         welcome.add(welcomePane);
     }
@@ -328,8 +332,7 @@ public class PsychoHasherGui extends JFrame {
                     hashTxtAreaData.setText((String) t.
                             getTransferData(DataFlavor.stringFlavor));
                 } catch (UnsupportedFlavorException | IOException ex) {
-                    System.err.
-                            println("Error while pasting data from clipboard.");
+                    logger.error("Error while pasting data from clipboard.", ex);
                 }
             }
 
@@ -405,7 +408,7 @@ public class PsychoHasherGui extends JFrame {
                         writer.newLine();
                     }
                 } catch (IOException ex) {
-                    System.err.println(ex.getMessage());
+                    logger.error(ex);
                 }
                 statusLabel.setText("Table exported successfully.");
                 JOptionPane.showMessageDialog(this, "Table exported and saved as "
@@ -613,7 +616,7 @@ public class PsychoHasherGui extends JFrame {
                                         tableModel.setValueAt(computedHashes.get(i), i, index);
                                     }
                                 } catch (InterruptedException | ExecutionException ex) {
-                                    System.err.println(ex.getMessage());
+                                    logger.error(ex);
                                 }
                             }
                             break;
@@ -696,6 +699,7 @@ public class PsychoHasherGui extends JFrame {
 
         private void failIfInterrupted() throws InterruptedException {
             if (Thread.currentThread().isInterrupted()) {
+                logger.error("Interrupted while hashing files");
                 throw new InterruptedException("Interrupted while hashing files");
             }
         }
@@ -717,10 +721,10 @@ public class PsychoHasherGui extends JFrame {
                     hashes.add(HashingUtils.getFileHash(f, hashType));
                 } else {
                     publish("Permission Denied. Unable to Hash file - " + f.getName());
+                    logger.debug("No permission to read file" + f.getName());
                     hashes.add("N/A");
                 }
             }
-
             return hashes;
         }
 
@@ -761,7 +765,6 @@ public class PsychoHasherGui extends JFrame {
                 + "of files for group hashing"));
         hashFilesGroup.add(grpFilesListScrollPane);
 
-        //(DefaultListModel<File>) grpFilesList.getModel();
         grpAddFile = new JButton("Single File");
         grpAddFile.setBounds(20, 50, 150, 35);
         grpAddFile.addActionListener((ActionEvent e) -> {
@@ -890,7 +893,7 @@ public class PsychoHasherGui extends JFrame {
                     writer.write("Message Digest/Hash: " + resultTxtArea.getText());
                     statusLabel.setText("Data export complete.");
                 } catch (IOException ex) {
-                    System.err.println(ex.getMessage());
+                    logger.error(ex);
                 }
 
                 JOptionPane.showMessageDialog(this, "List has been exported with "
@@ -958,6 +961,8 @@ public class PsychoHasherGui extends JFrame {
         private final HashType hashType;
         private final int fileCount;
 
+        private final Logger logger = LogManager.getLogger(HashGroupFilesTask.class);
+
         /**
          * Initializes the variables to be used during the processing of worker
          * thread.
@@ -982,6 +987,7 @@ public class PsychoHasherGui extends JFrame {
          */
         private void failIfInterrupted() throws InterruptedException {
             if (Thread.currentThread().isInterrupted()) {
+                logger.error("Interrupted while hashing files");
                 throw new InterruptedException("Interrupted while hashing files");
             }
         }
@@ -1007,6 +1013,7 @@ public class PsychoHasherGui extends JFrame {
                         permErr = true;
                         publish("Permission Denied. Unable to create hash for "
                                 + "the said file group - " + f.getName());
+                        logger.debug("No permission to read file" + f.getName());
                         break;
                     }
 
@@ -1018,9 +1025,9 @@ public class PsychoHasherGui extends JFrame {
                             md.update(dataBytes, 0, nread);
                         }
                     } catch (FileNotFoundException ex) {
-                        System.err.println(ex.getMessage());
+                        logger.error("File to be hashed is not found", ex);
                     } catch (IOException ex) {
-                        System.err.println(ex.getMessage());
+                        logger.error("IO exception occured", ex);
                     }
                 }
 
@@ -1030,7 +1037,7 @@ public class PsychoHasherGui extends JFrame {
                 }
 
             } catch (NoSuchAlgorithmException ex) {
-                System.err.println(ex.getMessage());
+                logger.error("Error while hashing in background", ex);
             }
 
             return grpHash;
@@ -1069,6 +1076,7 @@ public class PsychoHasherGui extends JFrame {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new PsychoHasherGui().setVisible(true);
+            logger.info("Application Started.");
         });
     }
 }
