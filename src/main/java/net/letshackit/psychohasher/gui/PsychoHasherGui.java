@@ -51,6 +51,7 @@ import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -94,15 +95,17 @@ public class PsychoHasherGui extends JFrame {
 
     private final JPanel mainPanel;
     private JPanel resultPanel;
-    private JPanel welcome, hashText, hashFiles, hashFilesGroup, verifyHashes;
-
-    private JToolBar statusBar;
+    private JPanel welcome, hashText, hashFiles, hashFilesGroup;
 
     private Clipboard clipBrd;
 
     private LinkedList<File> filesTohash;
 
     private JFileChooser fc;
+
+    /* Fields declaration for Custom Progress Dialog */
+    private JToolBar statusBar;
+    private JLabel statusLabel;
 
     /* Fields declaration for Custom Progress Dialog */
     private JDialog fileHasherDialog = null;
@@ -141,12 +144,6 @@ public class PsychoHasherGui extends JFrame {
             grpExportResults, grpComputeHash;
     private HashType hashAlgo;
 
-    /* Field Decriptio for Group File hash tab */
-    private JLabel verifyFilesHeader;
-    private JScrollPane verifyFilesListScrollPane;
-    private JList<File> verifyFilesList;
-    private JButton loadSavedHash, verifyRemoveAll, verifyComputeHash;
-
     /**
      * Builds the GUI and Initializes the components.
      *
@@ -178,6 +175,7 @@ public class PsychoHasherGui extends JFrame {
         } catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ex) {
             System.err.println(ex.getMessage());
         }
+        setIconImage(new ImageIcon(this.getClass().getClassLoader().getResource("Hash.png")).getImage());
 
         initGlobalDec();
         createResultPanel();
@@ -246,7 +244,6 @@ public class PsychoHasherGui extends JFrame {
         hashText = new JPanel();
         hashFiles = new JPanel();
         hashFilesGroup = new JPanel();
-        verifyHashes = new JPanel();
 
         /**
          * Initialize tabbed pane and create tabs
@@ -256,7 +253,6 @@ public class PsychoHasherGui extends JFrame {
         tabbedPane.addTab("Hash Text", hashText);
         tabbedPane.addTab("Hash Files", hashFiles);
         tabbedPane.addTab("Hash Files Group", hashFilesGroup);
-        tabbedPane.addTab("Verify Hashes", verifyHashes);
         tabbedPane.addChangeListener((ChangeEvent e) -> {
             switch (tabbedPane.getSelectedIndex()) {
                 case 0:
@@ -264,7 +260,6 @@ public class PsychoHasherGui extends JFrame {
                 case 1:
                     txtComputeHash.setVisible(true);
                     grpComputeHash.setVisible(false);
-                    verifyComputeHash.setVisible(false);
                     resultTxtArea.setText("");
                     hashText.add(resultPanel);
                     break;
@@ -273,16 +268,8 @@ public class PsychoHasherGui extends JFrame {
                 case 3:
                     txtComputeHash.setVisible(false);
                     grpComputeHash.setVisible(true);
-                    verifyComputeHash.setVisible(false);
                     resultTxtArea.setText("");
                     hashFilesGroup.add(resultPanel);
-                    break;
-                case 4:
-                    txtComputeHash.setVisible(false);
-                    grpComputeHash.setVisible(false);
-                    verifyComputeHash.setVisible(true);
-                    resultTxtArea.setText("");
-                    verifyHashes.add(resultPanel);
                     break;
             }
         });
@@ -304,10 +291,6 @@ public class PsychoHasherGui extends JFrame {
         /* ---HashDisks tab Starts--- */
         createHashFilesGroupTab();
         /* ---HashDisks tab ends--- */
-
-        /* ---Verify Hashes tab Starts--- */
-        verifyHashesTab();
-        /* ---Verify Hash tab ends--- */
     }
 
     private void createWelcomeTab() {
@@ -366,6 +349,7 @@ public class PsychoHasherGui extends JFrame {
             String hashedData = HashingUtils.getHash(hashTxtAreaData.getText(),
                     (HashType) hashAlgosCombo.getSelectedItem());
             resultTxtArea.setText(hashedData);
+            statusLabel.setText("Hash for string data computed.");
         });
         resultPanel.add(txtComputeHash);
 
@@ -375,7 +359,7 @@ public class PsychoHasherGui extends JFrame {
         hashFiles.setLayout(null);
 
         Vector<String> colNames = new Vector<>();
-        colNames.add("Sl No.");
+        colNames.add("Sl. No.");
         colNames.add("Filename");
         colNames.add("Size (in KiB)");
         colNames.add("Location");
@@ -405,7 +389,7 @@ public class PsychoHasherGui extends JFrame {
         exportToTsv.setBounds(620, 370, 150, 35);
         exportToTsv.setFont(new Font("Cambria", Font.CENTER_BASELINE, 15));
         exportToTsv.addActionListener((ActionEvent e) -> {
-            if (tableModel.getRowCount() > 0) {
+            if (tableModel.getRowCount() > 0 && tableModel.getColumnCount() > 4) {
                 try (BufferedWriter writer = Files.newBufferedWriter(Paths.get("hashes.tsv"),
                         StandardCharsets.UTF_8)) {
                     for (int i = 0; i < tableModel.getColumnCount(); i++) {
@@ -416,18 +400,19 @@ public class PsychoHasherGui extends JFrame {
 
                     for (int i = 0; i < tableModel.getRowCount(); i++) {
                         for (int j = 0; j < tableModel.getColumnCount(); j++) {
-                            writer.write(tableModel.getValueAt(i, j).toString() + "\t");
+                            writer.write(tableModel.getValueAt(i, j) + "\t");
                         }
                         writer.newLine();
                     }
                 } catch (IOException ex) {
                     System.err.println(ex.getMessage());
                 }
+                statusLabel.setText("Table exported successfully.");
                 JOptionPane.showMessageDialog(this, "Table exported and saved as "
                         + "hashes.tsv", "Data export complete",
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "No data to export", "Data export failed",
+                JOptionPane.showMessageDialog(this, "No data to export or hash not computed yet.", "Data export failed",
                         JOptionPane.ERROR_MESSAGE);
             }
         });
@@ -572,6 +557,7 @@ public class PsychoHasherGui extends JFrame {
             tableModel.setRowCount(0);
             filesTohash.clear();
             filesComputeHash.setEnabled(false);
+            statusLabel.setText("All files from the table has been removed.");
         });
         hashFiles.add(removeAll);
 
@@ -601,6 +587,7 @@ public class PsychoHasherGui extends JFrame {
                                 try {
                                     close.setEnabled(true);
                                     computedHashes.addAll(hashFileTask.get());
+                                    statusLabel.setText("Files hash computation complete.");
 
                                     String selectedOption = ((HashType) hashFilesAlgosCombo
                                             .getSelectedItem()).getValue();
@@ -650,10 +637,9 @@ public class PsychoHasherGui extends JFrame {
         fileHasherDialog = new JDialog(this);
         dialogPanel = new JPanel(new BorderLayout());
         dialogPanel.setSize(new Dimension(400, 300));
-        //dialogPanel.setPreferredSize(new Dimension(400, 300));
 
         fileHasherDialog.setContentPane(dialogPanel);
-        fileHasherDialog.setAlwaysOnTop(true);
+        fileHasherDialog.setAlwaysOnTop(false);
         fileHasherDialog.setVisible(true);
         fileHasherDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         fileHasherDialog.setLocation(this.getLocation());
@@ -848,6 +834,7 @@ public class PsychoHasherGui extends JFrame {
                             "Unable to Remove.", JOptionPane.ERROR_MESSAGE);
                 } else {
                     listModal.remove(index);
+                    statusLabel.setText("Selected file removed from list.");
                 }
             } else {
                 JOptionPane.showMessageDialog(hashFilesGroup, "No files added yet. "
@@ -867,6 +854,7 @@ public class PsychoHasherGui extends JFrame {
         grpRemoveAll.addActionListener((ActionEvent e) -> {
             if (!listModal.isEmpty()) {
                 listModal.removeAllElements();
+                statusLabel.setText("All the items from list has been removed");
             } else {
                 JOptionPane.showMessageDialog(hashFilesGroup, "No files added yet. "
                         + "The list is empty.", "Empty List", JOptionPane.ERROR_MESSAGE);
@@ -900,6 +888,7 @@ public class PsychoHasherGui extends JFrame {
                     writer.write("Digest Algorithm: " + hashAlgo.getValue());
                     writer.newLine();
                     writer.write("Message Digest/Hash: " + resultTxtArea.getText());
+                    statusLabel.setText("Data export complete.");
                 } catch (IOException ex) {
                     System.err.println(ex.getMessage());
                 }
@@ -918,6 +907,7 @@ public class PsychoHasherGui extends JFrame {
         grpComputeHash.setBounds(490, 90, 200, 40);
         grpComputeHash.setFont(new Font("Cambria", Font.BOLD, 15));
         grpComputeHash.addActionListener((ActionEvent e) -> {
+            statusLabel.setText("Files group hash computation started...");
             createHashingProgressDialog();
 
             progressBar.setValue(0);
@@ -939,6 +929,7 @@ public class PsychoHasherGui extends JFrame {
                                 try {
                                     resultTxtArea.setText(groupFilesTask.get());
                                     close.setEnabled(true);
+                                    statusLabel.setText("Hash Computation for group of files completed");
                                 } catch (InterruptedException | ExecutionException ex) {
                                     System.err.println(ex.getMessage());
                                 }
@@ -1062,27 +1053,16 @@ public class PsychoHasherGui extends JFrame {
 
     }
 
-    private void verifyHashesTab() {
-        verifyHashes.setLayout(null);
-
-        verifyFilesHeader = new JLabel("Verify Saved Hashes");
-        verifyFilesHeader.setBounds(10, 10, 200, 30);
-        verifyFilesHeader.setFont(new Font("Cambria", Font.BOLD, 14));
-        verifyHashes.add(verifyFilesHeader);
-
-        verifyComputeHash = new JButton("Compute Hash!");
-        verifyComputeHash.setEnabled(false);
-        verifyComputeHash.setBounds(490, 90, 200, 40);
-        verifyComputeHash.setFont(new Font("Cambria", Font.BOLD, 15));
-        resultPanel.add(verifyComputeHash);
-    }
-
     private void createStatusBar() {
         statusBar = new JToolBar(SwingConstants.HORIZONTAL);
         statusBar.setBorder(BorderFactory.createBevelBorder(
                 BevelBorder.LOWERED));
         statusBar.setPreferredSize(new Dimension(getWidth(), 30));
         statusBar.setFloatable(false);
+
+        statusLabel = new JLabel("Ready");
+        statusBar.add(statusLabel);
+
         mainPanel.add(statusBar, BorderLayout.SOUTH);
     }
 
