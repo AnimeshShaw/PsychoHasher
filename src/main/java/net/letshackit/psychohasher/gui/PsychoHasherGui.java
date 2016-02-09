@@ -176,7 +176,7 @@ public class PsychoHasherGui extends JFrame {
                     break;
                 }
             }
-            //UIManager.setLookAndFeel("com.jtattoo.plaf.texture.TextureLookAndFeel");
+            UIManager.setLookAndFeel("com.jtattoo.plaf.texture.TextureLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ex) {
             logger.error("Problem with LAF", ex);
         }
@@ -307,7 +307,7 @@ public class PsychoHasherGui extends JFrame {
             welcomePane.setPage(this.getClass().getClassLoader()
                     .getResource("welcome.html"));
         } catch (IOException ex) {
-            logger.error("Resource welcome.html not found", ex);
+            logger.debug("Resource welcome.html not found", ex);
         }
         welcome.add(welcomePane);
     }
@@ -699,7 +699,7 @@ public class PsychoHasherGui extends JFrame {
 
         private void failIfInterrupted() throws InterruptedException {
             if (Thread.currentThread().isInterrupted()) {
-                logger.error("Interrupted while hashing files");
+                logger.debug("Interrupted while hashing files");
                 throw new InterruptedException("Interrupted while hashing files");
             }
         }
@@ -987,7 +987,7 @@ public class PsychoHasherGui extends JFrame {
          */
         private void failIfInterrupted() throws InterruptedException {
             if (Thread.currentThread().isInterrupted()) {
-                logger.error("Interrupted while hashing files");
+                logger.debug("Interrupted while hashing files");
                 throw new InterruptedException("Interrupted while hashing files");
             }
         }
