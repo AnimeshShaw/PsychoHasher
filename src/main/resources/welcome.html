@@ -24,23 +24,41 @@ limitations under the License.
                 padding: 0;
                 margin: 0;
             }
-            
+
             body {
-                padding: 10px;
+                padding: 5px;
                 background-color: #ebebeb;
                 width: 600px;
                 height: 500px;
-                font: 14px "Cambria", sans-serif;
+                font: 12px "Calibri", sans-serif;
             }
-            
+
             h2 {
-                font: 16px "Cambria", sans-serif;
+                font: 14px "Cambria", sans-serif;
                 color: #ff6666;
+                text-align: justify;
             }
         </style>
     </head>
     <body>
         <h2>PsychoHasher</h2>        
-        <p>A Java based tool to generate and verify hashes for text, files, drives.</p>
+        <p>A Java based tool to generate and verify hashes for text, files, drives. It's a program which can compute the following 
+            hashes: MD5, SHA1, SHA-224, SHA-256, SHA-384 and SHA-512.</p>
+        <p>    
+            It can compute hashes for text string, individual files, no. of files, single hash for group of files. It also provides limited
+            customization for the user to this application. After hash computation the user has the option to export the results as 
+            a TSV (Tab-Separated) file.            
+        </p>
+        <h2>Current Features</h2>
+        <ul>
+            <li>Compute hash value of text string.</li>
+            <li>Compute hash value of individual files or files in a folder.</li>
+            <li>Compute Single hash for group of files or folder.</li>
+        </ul>
+        <h2>ToDo</h2>
+        <ul>
+            <li>Add an option to compute hash for logical volumes.</li>
+            <li>Add Verify hashes section.</li>
+        </ul>
     </body>
 </html>
