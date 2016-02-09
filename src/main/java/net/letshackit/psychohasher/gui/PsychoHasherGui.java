@@ -169,13 +169,14 @@ public class PsychoHasherGui extends JFrame {
     }
 
     private void initComponents() {
-        try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
+        try {/*
+             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+             if ("Nimbus".equals(info.getName())) {
+             UIManager.setLookAndFeel(info.getClassName());
+             break;
+             }
+             }*/
+
             UIManager.setLookAndFeel("com.jtattoo.plaf.texture.TextureLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ex) {
             logger.error("Problem with LAF", ex);
