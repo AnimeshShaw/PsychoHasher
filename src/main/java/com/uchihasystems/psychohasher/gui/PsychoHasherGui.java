@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.letshackit.psychohasher.gui;
+package com.uchihasystems.psychohasher.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dialog;
@@ -76,8 +76,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
-import net.letshackit.psychohasher.HashType;
-import net.letshackit.psychohasher.HashingUtils;
+import com.uchihasystems.psychohasher.HashType;
+import com.uchihasystems.psychohasher.HashingUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
