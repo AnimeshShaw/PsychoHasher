@@ -15,8 +15,6 @@
  */
 package com.uchihasystems.psychohasher;
 
-import com.uchihasystems.psychohasher.HashType;
-import com.uchihasystems.psychohasher.HashingUtils;
 import java.io.File;
 import java.net.URL;
 import static org.junit.Assert.assertEquals;

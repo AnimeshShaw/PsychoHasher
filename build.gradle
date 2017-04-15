@@ -1,6 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'application'
-mainClassName = 'net.letshackit.psychohasher.gui.PsychoHasherGui'
+mainClassName = 'com.uchihasystems.psychohasher.gui.PsychoHasherGui'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -14,7 +14,7 @@ jar {
     baseName = 'PsychoHasher'
     version = '1.0-Alpha'
     manifest {
-        attributes 'Main-Class': 'net.letshackit.psychohasher.gui.PsychoHasherGui'
+        attributes 'Main-Class': 'com.uchihasystems.psychohasher.gui.PsychoHasherGui'
     }
 }
 
