@@ -17,7 +17,8 @@ import java.util.Iterator;
 public class HashingUtils {
 
     /**
-     * Converts array of bytes to hex string.
+     * <p>
+     * Converts array of bytes to hex string.</p>
      *
      * @param bytes Byte Array to be converted to Hex String.
      * @return Returns the hex string for {@code bytes} array.

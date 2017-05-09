@@ -87,6 +87,8 @@ import org.apache.logging.log4j.Logger;
  */
 public class PsychoHasherGui extends JFrame {
 
+    private static final long serialVersionUID = 2784748735519288623L;
+
     private final int DEF_WIDTH = 800;
     private final int DEF_HEIGHT = 500;
 
@@ -95,9 +97,9 @@ public class PsychoHasherGui extends JFrame {
 
     private JEditorPane welcomePane;
 
-    private final JPanel mainPanel;
+    private JPanel mainPanel;
     private JPanel resultPanel;
-    private JPanel welcome, hashText, hashFiles, hashFilesGroup;
+    private JPanel welcome, hashText, hashFiles, hashFilesGroup, hashVerify;
 
     private Clipboard clipBrd;
 
@@ -151,35 +153,29 @@ public class PsychoHasherGui extends JFrame {
     /**
      * Builds the GUI and Initializes the components.
      *
-     * @throws HeadlessException
+     * @throws HeadlessException Nothing Much to Say Indeed!
      */
     public PsychoHasherGui() throws HeadlessException {
-        mainPanel = new JPanel(new BorderLayout());
-
-        setSize(new Dimension(DEF_WIDTH, DEF_HEIGHT));
-        setResizable(false);
-        setAlwaysOnTop(true);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setTitle("PsychoHasher - All Purpose Hashing tool");
-        setContentPane(mainPanel);
-        setLayout(new BorderLayout());
-        setIconImage(new ImageIcon(this.getClass().getClassLoader().getResource("Hash.png")).getImage());
         initComponents();
     }
 
     private void initComponents() {
-        try {/*
-             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-             if ("Nimbus".equals(info.getName())) {
-             UIManager.setLookAndFeel(info.getClassName());
-             break;
-             }
-             }*/
+        try {
+            mainPanel = new JPanel(new BorderLayout());
+
+            setSize(new Dimension(DEF_WIDTH, DEF_HEIGHT));
+            setResizable(false);
+            setAlwaysOnTop(true);
+            setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            setLocationRelativeTo(null);
+            setTitle("PsychoHasher - All Purpose Hashing tool");
+            setContentPane(mainPanel);
+            setLayout(new BorderLayout());
+            setIconImage(new ImageIcon(this.getClass().getClassLoader().getResource("Hash.png")).getImage());
 
             UIManager.setLookAndFeel("com.jtattoo.plaf.texture.TextureLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ex) {
-            logger.error("Problem with LAF", ex);
+            logger.error("Problem with Look And Fell.", ex);
         }
 
         initGlobalDec();
@@ -189,7 +185,8 @@ public class PsychoHasherGui extends JFrame {
     }
 
     /**
-     * Global declaration of Reusable components
+     * <p>
+     * Global declaration of Reusable components</p>
      */
     private void initGlobalDec() {
         resultPanel = new JPanel();
@@ -199,7 +196,8 @@ public class PsychoHasherGui extends JFrame {
     }
 
     /**
-     * Reusable Result Panel to be used in different tabs for different ops.
+     * <p>
+     * Reusable Result Panel to be used in different tabs for different ops</p>
      */
     private void createResultPanel() {
         resultPanel.setBorder(BorderFactory.createTitledBorder("Select Type of "
@@ -209,7 +207,7 @@ public class PsychoHasherGui extends JFrame {
 
         resultTxtArea = new JTextArea();
         resultTxtArea.setEditable(false);
-        resultTxtArea.setWrapStyleWord(false);
+        resultTxtArea.setWrapStyleWord(true);
         scrollPaneResult = new JScrollPane(resultTxtArea,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -238,17 +236,20 @@ public class PsychoHasherGui extends JFrame {
     }
 
     /**
-     * Create Tabbed Pane
+     * <p>
+     * Create Tabbed Pane</p>
      */
     private void createMainTabbedPane() {
 
         /**
-         * Initialize the panels to be used in the tabbed pane.
+         * <p>
+         * Initialize the panels to be used in the tabbed pane.</p>
          */
-        welcome = new JPanel(new FlowLayout());
+        welcome = new JPanel();
         hashText = new JPanel();
         hashFiles = new JPanel();
         hashFilesGroup = new JPanel();
+        hashVerify = new JPanel();
 
         /**
          * Initialize tabbed pane and create tabs
@@ -258,6 +259,8 @@ public class PsychoHasherGui extends JFrame {
         tabbedPane.addTab("Hash Text", hashText);
         tabbedPane.addTab("Hash Files", hashFiles);
         tabbedPane.addTab("Hash Files Group", hashFilesGroup);
+        //tabbedPane.addTab("Verify Hashes", hashVerify);
+
         tabbedPane.addChangeListener((ChangeEvent e) -> {
             switch (tabbedPane.getSelectedIndex()) {
                 case 0:
@@ -285,17 +288,22 @@ public class PsychoHasherGui extends JFrame {
         createWelcomeTab();
         /* ---Welcome Tab ends--- */
 
-        /* ---HashText tab Starts--- */
+ /* ---HashText tab Starts--- */
         createHashTextTab();
         /* ---HashText tab ends--- */
 
-        /* ---HashFiles tab Starts--- */
+ /* ---HashFiles tab Starts--- */
         createHashFilesTab();
         /* ---HashFiles tab ends--- */
 
-        /* ---HashDisks tab Starts--- */
+ /* ---HashFilesGrounp tab Starts--- */
         createHashFilesGroupTab();
         /* ---HashDisks tab ends--- */
+
+ /* ---Verifyhash tab Starts--- */
+        createVerifyHashTab();
+        /* ---Verify tab ends--- */
+
     }
 
     private void createWelcomeTab() {
@@ -308,7 +316,7 @@ public class PsychoHasherGui extends JFrame {
             welcomePane.setPage(this.getClass().getClassLoader()
                     .getResource("welcome.html"));
         } catch (IOException ex) {
-            logger.debug("Resource welcome.html not found", ex);
+            logger.error("Resource welcome.html not found", ex);
         }
         welcome.add(welcomePane);
     }
@@ -359,6 +367,9 @@ public class PsychoHasherGui extends JFrame {
 
     }
 
+    /**
+     * Multiple / Single File Hashing.
+     */
     private void createHashFilesTab() {
         hashFiles.setLayout(null);
 
@@ -636,6 +647,9 @@ public class PsychoHasherGui extends JFrame {
 
     }
 
+    /**
+     * File Hashing Progress Dialog.
+     */
     private void createHashingProgressDialog() {
         setEnabled(false);
         fileHasherDialog = new JDialog(this);
@@ -700,7 +714,7 @@ public class PsychoHasherGui extends JFrame {
 
         private void failIfInterrupted() throws InterruptedException {
             if (Thread.currentThread().isInterrupted()) {
-                logger.debug("Interrupted while hashing files");
+                logger.error("Interrupted while hashing files");
                 throw new InterruptedException("Interrupted while hashing files");
             }
         }
@@ -722,7 +736,7 @@ public class PsychoHasherGui extends JFrame {
                     hashes.add(HashingUtils.getFileHash(f, hashType));
                 } else {
                     publish("Permission Denied. Unable to Hash file - " + f.getName());
-                    logger.debug("No permission to read file" + f.getName());
+                    logger.error("No permission to read file" + f.getName());
                     hashes.add("N/A");
                 }
             }
@@ -734,18 +748,21 @@ public class PsychoHasherGui extends JFrame {
             chunks.stream().map((str) -> {
                 txtArea.append(str);
                 return str;
-            }).forEach((_item) -> {
+            }).forEach((item) -> {
                 txtArea.append("\n");
             });
         }
 
         @Override
         protected void done() {
-            txtArea.append("Hash Computation Complete");
+            txtArea.append("\nHash Computation Complete");
         }
 
     }
 
+    /**
+     * Hashing Grouped Files for single Hash.
+     */
     private void createHashFilesGroupTab() {
         hashFilesGroup.setLayout(null);
 
@@ -954,6 +971,10 @@ public class PsychoHasherGui extends JFrame {
 
     }
 
+    /**
+     * Class to hash group of files array in a different thread and set the
+     * progress.
+     */
     private class HashGroupFilesTask extends SwingWorker<String, String> {
 
         private final Enumeration<File> filesToHash;
@@ -988,7 +1009,7 @@ public class PsychoHasherGui extends JFrame {
          */
         private void failIfInterrupted() throws InterruptedException {
             if (Thread.currentThread().isInterrupted()) {
-                logger.debug("Interrupted while hashing files");
+                logger.error("Interrupted while hashing files");
                 throw new InterruptedException("Interrupted while hashing files");
             }
         }
@@ -1014,7 +1035,7 @@ public class PsychoHasherGui extends JFrame {
                         permErr = true;
                         publish("Permission Denied. Unable to create hash for "
                                 + "the said file group - " + f.getName());
-                        logger.debug("No permission to read file" + f.getName());
+                        logger.error("No permission to read file" + f.getName());
                         break;
                     }
 
@@ -1061,6 +1082,19 @@ public class PsychoHasherGui extends JFrame {
 
     }
 
+    /**
+     * <p>
+     * Hash Verification Tab.
+     * </p>
+     */
+    private void createVerifyHashTab() {
+
+    }
+
+    /**
+     * <p>
+     * Creating the StatusBar</p>
+     */
     private void createStatusBar() {
         statusBar = new JToolBar(SwingConstants.HORIZONTAL);
         statusBar.setBorder(BorderFactory.createBevelBorder(

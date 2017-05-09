@@ -12,19 +12,19 @@ task wrapper(type: Wrapper) {
 
 jar {
     baseName = 'PsychoHasher'
-    version = '1.0-Alpha'
+    version = '1.1-Beta'
     manifest {
         attributes 'Main-Class': 'com.uchihasystems.psychohasher.gui.PsychoHasherGui'
     }
 }
 
 task fatJar(type: Jar) {
-  manifest.from jar.manifest
-  classifier = '1.0-Alpha-FAT'
-  from {
-    configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
-  } 
-  with jar
+    manifest.from jar.manifest
+    classifier = '1.1-Beta-FAT'
+    from {
+        configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
+    } 
+    with jar
 }
 
 artifacts {

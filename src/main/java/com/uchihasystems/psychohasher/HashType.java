@@ -16,7 +16,7 @@
 package com.uchihasystems.psychohasher;
 
 /**
- * Enum that contains all the HashType Algo types supported by this application.
+ * <p>Enum that contains all the HashType Algo types supported by this application.</p>
  *
  * @author <b>Psycho_Coder </b> (<em>Animesh Shaw</em>)
  */
